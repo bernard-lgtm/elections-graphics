@@ -32,7 +32,7 @@ Preview-only parameters (never in codes or links): `&data=sample` (with `&at=` t
 
 ## Settings (config.js)
 
-`publicBase`, `hubUrl`, and `declared`, `deadline`, `sittings`: the same as `data-declared`, `data-deadline` and `#eh-sittings` on the hub's markup. Set them here on the day they are set on the hub; embeds already in articles read the file each time they load.
+`publicBase`; `hubUrl`, the results page (`https://www.dailymaverick.co.za/local-elections-results-2026/`), which every link out of an embed opens at the graphic's own place (All results under the graphic, the rest of a list, a council clicked on a map of South Africa or a province: `#johannesburg`, `#johannesburg-ward-12`, `#turnout-gauteng`); `declaredUrl`, the results declared page (`https://www.dailymaverick.co.za/local-elections-results-declared-2026/`), which the links open instead once the embed shows Results declared (from the day in `declared`; empty keeps them on `hubUrl`); and `declared`, `deadline`, `sittings`: the same as `data-declared`, `data-deadline` and `#eh-sittings` on the hub's markup. Set them here on the day they are set on the hub; embeds already in articles read the file each time they load.
 
 ## Files
 

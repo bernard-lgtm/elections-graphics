@@ -31,7 +31,13 @@
     if (!A) return '';
     try { return nat ? A.tab(HUB_TAB[g.tab] || 'all', areaNow()) : A.council(st.muni, g.id === 'ward' ? { ward: st.ward } : g.id === 'coalition' ? { coal: true } : g.id === 'wards' ? { wards: true } : {}); } catch (e) { return ''; }
   }
-  function hubLink(a) { return String(C.hubUrl || 'https://www.dailymaverick.co.za/elections').replace(/#.*$/, '') + (a ? '#' + a : ''); }
+  // the results page (config.js hubUrl), at the graphic's own place; once the graphic shows Results declared, the results declared page
+  // (declaredUrl), if set (not for the 2021 figures)
+  function clean(u) { return String(u || '').replace(/#.*$/, ''); }
+  var HUB = clean(C.hubUrl || 'https://www.dailymaverick.co.za/local-elections-results-2026/'), HUB_D = clean(C.declaredUrl);
+  function hubBase() { if (!HUB_D) return HUB; var s = state(); return s.k === 'final' && !s.past ? HUB_D : HUB; }
+  function hubLink(a) { return hubBase() + (a ? '#' + a : ''); }
+  function hubShort() { return hubBase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/+$/, ''); }
   function dayNo(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').trim()); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; }
   function dayTxt(n) { var d = new Date(n * 864e5); return WD[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MO[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
   function hhmm(t) { var d = new Date(t + 72e5); return ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
@@ -127,8 +133,9 @@
       kEl.textContent = t.kicker; tEl.textContent = t.title;
       document.title = t.kicker + ': ' + t.title.replace(/\u00a0/g, ' ') + ' \u00b7 Daily Maverick';
     }
-    var a = foot.querySelector('a.more'), href = hubLink(hubAnchor());
+    var a = foot.querySelector('a.more'), href = hubLink(hubAnchor()), u = foot.querySelector('.url'), us = hubShort();
     if (a.getAttribute('href') !== href) a.setAttribute('href', href);
+    if (u.textContent !== us) u.textContent = us;
   }
 
   /* ---- the Coalition builder (library v2.1): over the council's half circle, one line on what a coalition takes and Start again, which
@@ -247,7 +254,7 @@
     stat = document.createElement('div'); stat.className = 'ehx-status'; stat.setAttribute('role', 'status'); stat.setAttribute('data-k', 'loading');
     hrow = document.createElement('div'); hrow.className = 'ehx-headrow'; hrow.appendChild(head); hrow.appendChild(stat);
     foot = document.createElement('div'); foot.className = 'ehx-foot';
-    foot.innerHTML = '<span class="src">Source: Electoral Commission of South Africa<span class="live" hidden></span><span class="at"></span> \u00b7 <a class="more" href="' + esc(hubLink('')) + '" target="_blank" rel="noopener">All results on the Elections Hub</a><span class="url">dailymaverick.co.za/elections</span></span>' +
+    foot.innerHTML = '<span class="src">Source: Electoral Commission of South Africa<span class="live" hidden></span><span class="at"></span> \u00b7 <a class="more" href="' + esc(hubLink('')) + '" target="_blank" rel="noopener">All results on the Elections Hub</a><span class="url">' + esc(hubShort()) + '</span></span>' +
       '<a class="logo" href="https://www.dailymaverick.co.za" target="_blank" rel="noopener" aria-label="Daily Maverick"><img src="assets/DailyMaverickMasthead_BlackRed.svg" alt="Daily Maverick" width="75" height="15"></a>';
     root.insertBefore(hrow, root.firstChild);
     root.appendChild(foot);

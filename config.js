@@ -6,9 +6,14 @@ window.EHX_CONFIG = {
      for previews. */
   publicBase: 'https://bernard-lgtm.github.io/elections-graphics/',
 
-  /* The Elections Hub on dailymaverick.co.za. The link under every embed opens it at the graphic's own place (#johannesburg,
-     #turnout-gauteng …). */
-  hubUrl: 'https://www.dailymaverick.co.za/elections',
+  /* The results page on dailymaverick.co.za. Every link out of an embed opens it at the graphic's own place: All results under the
+     graphic, the rest of a list, and a council clicked on a map or list of South Africa or a province (#johannesburg,
+     #johannesburg-ward-12, #johannesburg-coalition, #turnout-gauteng …). */
+  hubUrl: 'https://www.dailymaverick.co.za/local-elections-results-2026/',
+
+  /* The results declared page. Once an embed shows Results declared (from the day set in declared, below), its links open this page
+     instead, at the same place. Leave it empty to keep them on hubUrl. */
+  declaredUrl: 'https://www.dailymaverick.co.za/local-elections-results-declared-2026/',
 
   /* The same settings as data-declared, data-deadline and #eh-sittings on the hub's markup. Set them here on the day they are set on
      the hub, so the embeds move on with it. */
