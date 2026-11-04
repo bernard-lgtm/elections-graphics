@@ -1,0 +1,100 @@
+/* embed-fit.css — the fixed-height embed (html.ehx-fit, the default): the card is exactly as tall as the frame (the embed code's height,
+   the same on desktop and phones), the title, the count's progress and the credit keep their size, and the graphic takes the room between
+   them: maps are drawn to fit it (embed-fit.js sets their width from the room's height), lists show the rows that fit and a link to the
+   rest on the hub. Under 560px (a phone) the two maps of Change since 2021 become one map with a 2021 / 2026 switch. */
+html.ehx-fit,html.ehx-fit body{height:100%;overflow:hidden}
+html.ehx-fit:not(.ehx-top) #dm-eh{height:100%}
+html.ehx-fit.ehx-top body{height:auto;overflow:auto}
+html.ehx-fit.ehx-top #dm-eh{height:var(--ehx-h,760px);max-width:700px}
+html.ehx-fit #dm-eh{box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+html.ehx-fit #dm-eh > *{flex:none}
+html.ehx-fit #dm-eh > .ehx-fill{flex:1 1 auto;min-height:0;overflow:hidden;position:relative;display:flex;flex-direction:column}
+/* in a flex column an auto side margin (the hub's centring) would shrink the part to its content: every part keeps the full width */
+html.ehx-fit #dm-eh .ehx-fill > *,html.ehx-fit #dm-eh .ehx-fill .eh-wrap,html.ehx-fit #dm-eh .ehx-fill .eh-hero-inner,html.ehx-fit #dm-eh .ehx-fill .eh-hero-inner > div,html.ehx-fit #dm-eh .ehx-fill .mf-widget{width:auto;max-width:none;margin-left:0;margin-right:0;align-self:stretch}
+html.ehx-fit #dm-eh .ehx-fill .mf-file,html.ehx-fit #dm-eh .ehx-fill .mf-file-inner-body,html.ehx-fit #dm-eh .ehx-fill .mf-file-body,html.ehx-fit #dm-eh .ehx-fill .mf-ward,html.ehx-fit #dm-eh .ehx-fill .mf-wmap,html.ehx-fit #dm-eh .ehx-fill .mf-wm-panel,html.ehx-fit #dm-eh .ehx-fill .mf-wm-grid,html.ehx-fit #dm-eh .ehx-fill .mf-wardpanel,html.ehx-fit #dm-eh .ehx-fill .mf-wardgov{width:auto;max-width:none;align-self:stretch}
+/* in a flex column a block keeps the column's width only when it is told so: the ward map's panel is a flex item of .mf-ward */
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward{display:flex;flex-direction:column}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward > *{width:100%;flex:none}
+html.ehx-fit #dm-eh .ehx-headrow{margin-bottom:16px}
+html.ehx-fit #dm-eh .ehx-foot{margin-top:14px;padding:10px 0 12px}
+@media (max-width:480px){html.ehx-fit #dm-eh .ehx-head .t{font-size:22px}html.ehx-fit #dm-eh .ehx-foot{font-size:11.5px;gap:6px 14px}}
+/* a row the room has no place for, and the link to the rest */
+html.ehx-fit #dm-eh [data-ehx-cut]{display:none!important}
+html.ehx-fit #dm-eh .ehx-more{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:11px 0 0;font:600 13px/1.3 var(--font-ui);color:#171717;text-decoration:none}
+html.ehx-fit #dm-eh .ehx-more[hidden]{display:none}
+html.ehx-fit #dm-eh .ehx-more .arr{flex:none;font-size:18px;line-height:1;color:#CA2828}
+html.ehx-fit #dm-eh .ehx-more:hover{color:#CA2828}
+html.ehx-fit #dm-eh .mf-res-more{display:none!important}
+
+/* ---- South Africa and the provinces: the panel's column fills the room ----
+   A map the hub draws afresh (it redraws its maps as the results come in) is never taller than its room, even before embed-fit.js has
+   set its width: the drawing keeps its shape inside the box (max-height on the svg), so it does not flash up at the full width. */
+html.ehx-fit.ehx-nat #dm-eh .eh-tabs-sec .eh-wrap,html.ehx-fit.ehx-nat #dm-eh .eh-tab-panel:not([hidden]),html.ehx-fit.ehx-nat #dm-eh .eh-hung-body,html.ehx-fit.ehx-nat #dm-eh .eh-cmp-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+html.ehx-fit.ehx-nat #dm-eh .eh-tab-panel{padding:0!important;margin:0!important}
+html.ehx-fit.ehx-nat #dm-eh .eh-hung{margin:0!important}
+/* the map over party support (the turnout key, the hung councils' figures): the support table keeps its height, the map takes the rest */
+html.ehx-fit #dm-eh .res-grid{flex:1 1 auto;min-height:0;display:flex!important;flex-direction:column;align-items:stretch;gap:14px}
+html.ehx-fit #dm-eh .res-grid[hidden]{display:none!important}
+html.ehx-fit #dm-eh .res-grid > .res-map{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:stretch;margin:0;width:auto;max-width:none}
+html.ehx-fit #dm-eh .res-grid > .res-board{flex:none;min-height:0;margin:0;width:auto;max-width:none}
+html.ehx-fit #dm-eh .res-map > .res-map-head{flex:none;min-height:0}
+html.ehx-fit #dm-eh .res-map > .res-map-svg{flex:1 1 auto;min-height:0;width:100%;max-width:none;margin:0 auto;display:flex;align-items:center}
+html.ehx-fit #dm-eh .res-map > .res-map-svg > svg{width:100%;height:auto;max-height:100%}
+html.ehx-fit #dm-eh .hm-grid:not([hidden]) + .hm-rest{margin-top:0}
+/* a wide card (861px and up, the hub's own breakpoint): the map beside party support, the turnout key or the hung councils' figures, as on
+   the hub; the map takes the room's whole height */
+@media (min-width:861px){
+html.ehx-fit #dm-eh .res-grid{flex-direction:row;align-items:stretch;gap:0 40px}
+html.ehx-fit #dm-eh .res-grid > .res-map{flex:1 1 auto;min-width:0}
+html.ehx-fit #dm-eh .res-grid > .res-board{flex:0 0 min(42%,460px);align-self:flex-start}
+}
+/* party support's rows, closer */
+html.ehx-fit #dm-eh .res-stand .mf-res-table tbody tr:not(.is-oth) > th,html.ehx-fit #dm-eh .res-stand .mf-res-table tbody tr:not(.is-oth) > td{padding-top:5px;padding-bottom:5px}
+html.ehx-fit #dm-eh .res-stand .mf-res-table thead th{padding-bottom:6px}
+html.ehx-fit #dm-eh .res-stand .mf-res-tw{padding-bottom:0;margin-bottom:0}
+/* the councils table and the hung councils' list: no heading room over them, the rows closer */
+html.ehx-fit #dm-eh .res-tbl .res-h3,html.ehx-fit #dm-eh .eh-hung-h3{margin-top:14px;font-size:19px}
+html.ehx-fit #dm-eh .res-tbl > .res-h3:first-child,html.ehx-fit #dm-eh .eh-hung-pv:first-child > .eh-hung-h3{margin-top:0}
+html.ehx-fit #dm-eh .res-tw{padding-bottom:0;margin-bottom:0}
+html.ehx-fit #dm-eh .res-table tbody th,html.ehx-fit #dm-eh .res-table tbody td{padding-top:8px;padding-bottom:8px}
+html.ehx-fit #dm-eh .eh-hung-row{padding-top:8px;padding-bottom:8px}
+/* Change since 2021: the two maps beside each other, each taking the room's height; the note under them */
+html.ehx-fit #dm-eh .eh-cmp-body > .res-grid.cmp-maps{flex:1 1 auto;min-height:0;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr);column-gap:24px;align-items:stretch}
+html.ehx-fit #dm-eh .cmp-maps > .cmp-map{display:flex;flex-direction:column;min-height:0;margin:0}
+/* the two years' labels on one line (the hub stacks the maps under 861px and takes the second label's room away) */
+html.ehx-fit #dm-eh .cmp-maps > .cmp-map > .res-map-head{margin-top:0;min-height:32px}
+html.ehx-fit #dm-eh .cmp-maps > .cmp-map > .res-map-head + .res-map-svg{margin-top:0}
+html.ehx-fit #dm-eh .cmp-maps > .cmp-map > .cmp-legend{flex:none;margin-top:8px}
+html.ehx-fit #dm-eh .eh-cmp-body > .cmp-note{flex:none;margin:8px 0 0}
+html.ehx-fit #dm-eh .ehx-tog{display:none;flex:none;margin:0 0 10px;padding:0;border:0;gap:0}
+html.ehx-fit #dm-eh .ehx-tog button{height:32px;padding:0 16px;border:1px solid #171717;margin:0 -1px 0 0;background:#fff;color:#171717;font:700 12.5px var(--font-ui);letter-spacing:.02em;cursor:pointer}
+html.ehx-fit #dm-eh .ehx-tog button:first-child{border-radius:4px 0 0 4px}
+html.ehx-fit #dm-eh .ehx-tog button:last-child{border-radius:0 4px 4px 0}
+html.ehx-fit #dm-eh .ehx-tog button[aria-pressed="true"]{background:#171717;color:#fff}
+@media (max-width:559px){
+html.ehx-fit #dm-eh .ehx-tog{display:inline-flex}
+html.ehx-fit #dm-eh .eh-cmp-body > .res-grid.cmp-maps{display:flex!important;flex-direction:column}
+html.ehx-fit #dm-eh .cmp-maps > .cmp-map{flex:1 1 auto}
+html.ehx-fit #dm-eh .cmp-maps > .cmp-map > .res-map-head .cmp-yr{display:none}
+html.ehx-fit[data-ehx-y="2021"] #dm-eh .cmp-maps > .cmp-map:not([data-y="2021"]),html.ehx-fit:not([data-ehx-y="2021"]) #dm-eh .cmp-maps > .cmp-map[data-y="2021"]{display:none}
+}
+
+/* ---- a council: the file's parts stack in the room; what does not fit is cut, the ward map drawn narrower until it fits ---- */
+html.ehx-fit.ehx-muni #dm-eh .eh-hero{padding:0!important}
+html.ehx-fit.ehx-muni #dm-eh .mf-file-inner-body{padding-top:0!important}
+html.ehx-fit.ehx-muni #dm-eh .mf-wmap--res{margin-top:0}
+html.ehx-fit[data-embed="ward"] #dm-eh .mf-ward,html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward{padding-top:0!important}
+/* Results by ward on a phone (the key under the map): the map's box takes the room the key leaves, the drawing scales into it (the hub draws
+   it to the width, under a cap on its height; here the box's height is the room's, and the drawing keeps its shape inside it) */
+html.ehx-fit[data-embed="wards"] #dm-eh .eh-hero-inner,html.ehx-fit[data-embed="wards"] #dm-eh .eh-hero-inner > div,html.ehx-fit[data-embed="wards"] #dm-eh .mf-widget,html.ehx-fit[data-embed="wards"] #dm-eh .mf-file,html.ehx-fit[data-embed="wards"] #dm-eh .mf-file-inner-body,html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward,html.ehx-fit[data-embed="wards"] #dm-eh .mf-wmap--res,html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-panel,html.ehx-fit[data-embed="wards"] #dm-eh .mf-wmap:not([data-view="cmp"]) .mf-wm-grid:not(.has-side){display:flex!important;flex-direction:column;flex:1 1 auto;min-height:0;width:auto;align-self:stretch}
+html.ehx-fit[data-embed="wards"] #dm-eh .eh-hero-inner > div > *,html.ehx-fit[data-embed="wards"] #dm-eh .mf-widget > *,html.ehx-fit[data-embed="wards"] #dm-eh .mf-file-inner-body > *{align-self:stretch}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wmap:not([data-view="cmp"]) .mf-wm-grid:not(.has-side) > .mf-wm-box{flex:1 1 auto;min-height:120px;height:auto!important}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward > .mf-wmap--res{flex:1 1 auto}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-grid:not(.has-side) > .mf-wm-side,html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-cmp{flex:none}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-grid.has-side{flex:none}
+html.ehx-fit[data-embed="ward"] #dm-eh .mf-wardpanel .wp-cands > .wp-lbl{margin-top:16px}
+/* the council banner stands in the middle of its room */
+html.ehx-fit[data-embed="council"] #dm-eh .eh-hero{justify-content:center}
+/* the Coalition builder: the half circle and its parties in the middle of the room under the line (safe: at the top if they ever need more
+   room than there is) */
+html.ehx-fit[data-embed="coalition"] #dm-eh .eh-hero{justify-content:center;justify-content:safe center}

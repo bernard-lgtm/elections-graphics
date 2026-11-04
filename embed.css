@@ -1,0 +1,139 @@
+/* embed.css — graphic.html?embed=…: one graphic of the hub in a white card, with its title, the count's box beside it and the credit.
+   Nothing here applies to the page without ?embed= (html.ehx-on). The card's own white space: 20px (16px on phones) inside a hairline. */
+html.ehx-on,html.ehx-on body{margin:0;padding:0;background:transparent}
+html.ehx-on #dm-eh{background:#fff;border:1px solid #D4D4D4;border-radius:10px;padding:20px 22px 0;margin:0;max-width:none}
+@media (max-width:480px){html.ehx-on #dm-eh{padding:16px 16px 0}}
+/* opened on its own (the link in a browser tab): the card on the library's grey */
+html.ehx-top body{background:#F2F2F2;padding:24px 16px 40px}
+html.ehx-top #dm-eh{max-width:1100px;margin:0 auto}
+html.ehx-on #dm-eh > :not(.eh-hero):not(.eh-tabs-sec):not(.mf-modal):not(.ehx-headrow):not(.ehx-coal):not(.ehx-foot){display:none!important}
+/* a map comes in once the hub has drawn it and its first redrawing is over (embed-boot.js: html.ehx-hold; embed.js adds html.ehx-in) */
+html.ehx-hold #dm-eh > .eh-hero,html.ehx-hold #dm-eh > .eh-tabs-sec{transition:opacity .25s ease}
+html.ehx-hold:not(.ehx-in) #dm-eh > .eh-hero,html.ehx-hold:not(.ehx-in) #dm-eh > .eh-tabs-sec{opacity:0}
+html.is-snap #dm-eh > .eh-hero,html.is-snap #dm-eh > .eh-tabs-sec{opacity:1!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){html.ehx-hold #dm-eh > .eh-hero,html.ehx-hold #dm-eh > .eh-tabs-sec{transition:none}}
+
+/* the head: the title on the left, the count's box on the right */
+html.ehx-on #dm-eh .ehx-headrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,280px);align-items:center;column-gap:24px;margin:0 0 20px}
+html.ehx-on #dm-eh .ehx-head{min-width:0;margin:0}
+html.ehx-on #dm-eh .ehx-head .k{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0 0 5px;font:700 11px/1.2 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:#6B6C6D}
+html.ehx-on #dm-eh .ehx-head .t{display:block;margin:0;font:700 26px/1.12 var(--font-display);letter-spacing:.005em;color:#171717;text-wrap:balance}
+@media (max-width:480px){html.ehx-on #dm-eh .ehx-head .t{font-size:23px}}
+html.ehx-on #dm-eh .ehx-tag{display:inline-block;padding:2px 6px 1px;border-radius:3px;background:#171717;color:#fff;font:700 10px/1.4 var(--font-ui);letter-spacing:.08em;text-transform:uppercase}
+html.ehx-on #dm-eh .ehx-tag[hidden]{display:none}
+
+/* where the count stands, in the hub's count box (post-elections v30: its masthead's three states, its results tabs' box). Counting in red,
+   with the share of voting districts counted, its bar and the voting districts; Count complete in charcoal, the results provisional until
+   declared; Results declared in green, with the day. The box's look is the hub's own (.mf-decl in its stylesheet); here its size, and
+   the states the hub has no box for, in grey: loading, no votes counted yet, no answer from the feed. Every state the same height. */
+html.ehx-on #dm-eh .ehx-status{min-width:0;display:flex}
+html.ehx-on #dm-eh .ehx-status > .mf-decl{flex:1 1 auto;min-width:0;min-height:74px;align-content:center}
+html.ehx-on #dm-eh .ehx-status > .ehx-done{justify-items:center;gap:5px;padding:8px 11px 9px;text-align:center}
+html.ehx-on #dm-eh .ehx-status > .ehx-done .sub{font-size:11px;text-wrap:balance}
+html.ehx-on #dm-eh .ehx-status > .mf-decl.is-prov{background:#181818}
+html.ehx-on #dm-eh .ehx-status > .mf-decl.is-idle{background:#F2F2F2}
+html.ehx-on #dm-eh .ehx-status > .mf-decl.is-idle .st{color:#414343}
+html.ehx-on #dm-eh .ehx-status > .mf-decl.is-idle .sub{color:#6B6C6D}
+/* phones: the title and the box side by side, half each (the hub's area dropdown and count box, v23). In the red box the status on top,
+   the bar with the share beside it, then the voting districts (the hub's black banner on phones, v23.22) */
+@media (max-width:480px){
+html.ehx-on #dm-eh .ehx-headrow{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px}
+html.ehx-on #dm-eh .ehx-status > .mf-decl{min-height:64px;container-type:inline-size}
+html.ehx-on #dm-eh .ehx-status > .is-live{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"st st" "trk pct" "sub sub";gap:7px 8px;padding:10px 12px 11px}
+html.ehx-on #dm-eh .ehx-status > .is-live .mf-decl-row{display:contents}
+html.ehx-on #dm-eh .ehx-status > .is-live .st{grid-area:st}
+html.ehx-on #dm-eh .ehx-status > .is-live .mf-decl-row > b{grid-area:pct;font-size:17px}
+html.ehx-on #dm-eh .ehx-status > .is-live .trk{grid-area:trk}
+html.ehx-on #dm-eh .ehx-status > .is-live .sub{grid-area:sub;text-align:left;font-size:11px;line-height:1.3;text-wrap:balance}
+html.ehx-on #dm-eh .ehx-status > .ehx-done{padding:9px 10px}
+html.ehx-on #dm-eh .ehx-status > .ehx-done .st{min-width:0;font-size:clamp(9px,calc((100cqw - 13px) / 11),10.5px);white-space:normal;text-wrap:balance}
+}
+
+/* the credit: the source, the link to the hub, the masthead */
+html.ehx-on #dm-eh .ehx-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;margin:20px 0 0;padding:12px 0 14px;border-top:1px solid #E9E9E9;font:400 12px/1.4 var(--font-ui);color:#6B6C6D}
+html.ehx-on #dm-eh .ehx-foot .src{flex:1 1 260px;min-width:0}
+html.ehx-on #dm-eh .ehx-foot a.more{color:#171717;font-weight:600;text-decoration:underline;text-decoration-color:#D4D4D4;text-underline-offset:3px;white-space:nowrap}
+html.ehx-on #dm-eh .ehx-foot a.more:hover{color:#CA2828;text-decoration-color:currentColor}
+html.ehx-on #dm-eh .ehx-foot .logo{flex:none;display:block;line-height:0;margin-left:auto}
+html.ehx-on #dm-eh .ehx-foot .logo img{display:block;height:15px;width:auto}
+html.ehx-on #dm-eh .ehx-foot .at,html.ehx-on #dm-eh .ehx-foot .url{display:none}
+html.is-snap #dm-eh .ehx-foot .live,html.is-snap #dm-eh .ehx-foot a.more{display:none}
+html.is-snap #dm-eh .ehx-foot .at,html.is-snap #dm-eh .ehx-foot .url{display:inline}
+
+/* ---- South Africa and the provinces: one tab's panel, without the tabs and the area dropdown over them ---- */
+html.ehx-nat #dm-eh .eh-hero{display:none!important}
+html.ehx-nat #dm-eh .eh-tabs-sec{padding:0!important;margin:0;border:0!important}
+html.ehx-nat #dm-eh .eh-tabs-sec .eh-wrap{padding:0!important;max-width:none}
+html.ehx-nat #dm-eh .eh-tabs-head,html.ehx-nat #dm-eh #res-state,html.ehx-nat #dm-eh .res-preview{display:none!important}
+html[data-embed="map"] #dm-eh #res-tbl,html[data-embed="turnout"] #dm-eh #res-tbl{display:none!important}
+html[data-embed="support"] #dm-eh #res-tbl,html[data-embed="support"] #dm-eh #res-map{display:none!important}
+html[data-embed="support"] #dm-eh #eh-res .res-grid{display:block!important}
+html[data-embed="table"] #dm-eh #eh-res .res-grid{display:none!important}
+html[data-embed="table"] #dm-eh #res-tbl > .res-h3:first-child{display:none!important}
+html[data-embed="hung"][data-view="map"] #dm-eh .hm-rest{display:none!important}
+html[data-embed="hung"][data-view="list"] #dm-eh .hm-grid{display:none!important}
+html[data-embed="cmp"] #dm-eh #eh-cmp-body > :not([data-ehx="1"]){display:none!important}
+html[data-embed="cmp"] #dm-eh #eh-cmp-body > .cmp-sec{display:none!important}
+
+/* ---- a council: the municipal file alone, without the search box ---- */
+html.ehx-muni #dm-eh .eh-tabs-sec{display:none!important}
+html.ehx-muni #dm-eh .eh-hero{padding:0!important;background:none}
+html.ehx-muni #dm-eh .eh-hero-inner{display:block!important;padding:0!important;max-width:none}
+html.ehx-muni #dm-eh .mf-widget{border:0!important;max-width:none;background:none}
+html.ehx-muni #dm-eh .mf-search,html.ehx-muni #dm-eh .mf-stories,html.ehx-muni #dm-eh #mf-ward-share,html.ehx-muni #dm-eh .mf-ward-help,html.ehx-muni #dm-eh .wg-acts,html.ehx-muni #dm-eh .mf-wa{display:none!important}
+html.ehx-muni #dm-eh .mf-file-inner-body{padding:0!important}
+html.ehx-muni #dm-eh .mf-file-body{display:block}
+html.ehx-muni #dm-eh .mf-file-left{max-width:none;width:auto}
+html.ehx-muni #dm-eh .mf-ward{padding-top:0!important;margin-top:0}
+html.ehx-muni:not([data-embed="council"]) #dm-eh .mf-file-banner{display:none!important}
+html[data-embed="council"] #dm-eh .mf-file-inner-body{display:none!important}
+html[data-embed="council"] #dm-eh .mf-file-banner{border-radius:6px}
+html[data-embed="seats"] #dm-eh .mf-res-tbl,html[data-embed="coalition"] #dm-eh .mf-res-tbl,html[data-embed="seats"] #dm-eh .mf-ward,html[data-embed="coalition"] #dm-eh .mf-ward{display:none!important}
+html[data-embed="votes"] #dm-eh .mf-res-seats,html[data-embed="votes"] #dm-eh .mf-ward{display:none!important}
+html[data-embed="wards"] #dm-eh #mf-file-body,html[data-embed="wards"] #dm-eh .mf-ward > :not(.mf-wmap--res),html[data-embed="wards"] #dm-eh .mf-wm-tabs{display:none!important}
+html[data-embed="wards"] #dm-eh .mf-wm-panel{border:0;border-radius:0;padding:0 0 4px}
+html[data-embed="ward"] #dm-eh #mf-file-body,html[data-embed="ward"] #dm-eh #mf-ward-row,html[data-embed="ward"] #dm-eh .mf-wmap{display:none!important}
+
+/* ---- Coalition builder (library v2.1): one line on what a coalition takes with Start again beside it, then the council's half circle, the
+   tally in its middle, and the parties to pick. None of the municipal file's own parts around it: the Hung council banner, the box and its
+   status tag (the count's box says it), Who can build a coalition in <council>? and Back to results ---- */
+html.ehx-on #dm-eh .ehx-coal{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 4px}
+html.ehx-on #dm-eh .ehx-coal[hidden]{display:none}
+html.ehx-on #dm-eh .ehx-coal-t{flex:1 1 auto;min-width:0;max-width:640px;margin:0;font:400 15px/1.45 var(--font-ui);color:#414343;text-wrap:pretty}
+html.ehx-on #dm-eh .ehx-coal-t b{font-weight:600;color:#171717}
+html.ehx-on #dm-eh .ehx-coal-clr{flex:none;position:relative;display:inline-flex;align-items:center;gap:7px;height:34px;margin:-6px 0 0;padding:0 13px 0 11px;border:1px solid #171717;border-radius:4px;background:#fff;color:#171717;font:700 12.5px/1 var(--font-ui);letter-spacing:.02em;white-space:nowrap;cursor:pointer;transition:background-color .15s ease,color .15s ease,border-color .15s ease}
+html.ehx-on #dm-eh .ehx-coal-clr::before{content:"";position:absolute;inset:-5px}
+html.ehx-on #dm-eh .ehx-coal-clr[hidden]{display:none}
+html.ehx-on #dm-eh .ehx-coal-clr svg{display:block;flex:none;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+html.ehx-on #dm-eh .ehx-coal-clr:disabled{border-color:#D4D4D4;color:#9B9B9B;cursor:default}
+@media (hover:hover){html.ehx-on #dm-eh .ehx-coal-clr:not(:disabled):hover{background:#171717;color:#fff}}
+html.ehx-on #dm-eh .ehx-coal-clr:active:not(:disabled){background:#414343;border-color:#414343;color:#fff;transition-duration:0s}
+html.ehx-on #dm-eh .ehx-coal-clr:focus-visible{outline:2px solid #D33D3D;outline-offset:2px}
+@media (max-width:480px){
+html.ehx-on #dm-eh .ehx-coal{gap:12px}
+html.ehx-on #dm-eh .ehx-coal-t{font-size:14px}
+html.ehx-on #dm-eh .ehx-coal-clr{width:38px;height:38px;margin:-4px 0 0;padding:0;justify-content:center}
+html.ehx-on #dm-eh .ehx-coal-clr svg{width:18px;height:18px}
+html.ehx-on #dm-eh .ehx-coal-clr span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+}
+html[data-embed="coalition"] #dm-eh .eh-dl,html[data-embed="coalition"] #dm-eh .mf-seat-head,html[data-embed="coalition"] #dm-eh .mf-board-cap,html[data-embed="coalition"] #dm-eh .mf-v4-ag-head{display:none!important}
+html[data-embed="coalition"] #dm-eh .mf-seat-box{margin:0;padding:0;border:0;border-radius:0;background:none}
+/* the hub's rule over a section that follows its (hidden) note: no hairline and no room over the seats */
+html[data-embed="coalition"] #dm-eh .mf-res-seats{margin-top:0!important;padding-top:0!important;border-top:0!important}
+/* room over the half circle for the Majority flag, at every width and in every state, so nothing moves when a coalition reaches one */
+html[data-embed="coalition"] #dm-eh .mf-seat-box .mf-res-board{margin:0 auto;padding-top:44px}
+html[data-embed="coalition"] #dm-eh .mf-seat-box .mf-res-board .ehh-stage{margin-top:0!important}
+/* the parties a little closer than on the hub, so a council with many of them keeps the half circle large (embed-fit.js draws it smaller
+   only where they still need the room) */
+html[data-embed="coalition"] #dm-eh .mf-coal-row{gap:10px 14px;margin-top:16px;padding-bottom:4px}
+@media (max-width:640px){html[data-embed="coalition"] #dm-eh .mf-coal-row{gap:8px 12px;margin-top:12px;padding-bottom:2px}}
+
+/* ---- no votes counted yet, or no answer from the feed: the count's box says so, the hub's own note under it would repeat it ---- */
+html.ehx-on[data-k="waiting"] #dm-eh .mf-res-msg,html.ehx-on[data-k="error"] #dm-eh .mf-res-msg,html.ehx-on[data-k="waiting"] #dm-eh #res-stand > .res-sub{display:none!important}
+/* Votes by party has nothing else to show before the count: the hub's note stays, so the card is not blank */
+html.ehx-on[data-k="waiting"][data-embed="votes"] #dm-eh .mf-res-msg{display:block!important;margin:4px 0 0;color:#6B6C6D}
+html.ehx-on[data-k="waiting"] #dm-eh #mf-res,html.ehx-on[data-k="error"] #dm-eh #mf-res{min-height:0!important}
+
+/* ---- while an image is taken: no controls that do nothing on paper ---- */
+html.is-snap #dm-eh .res-zoom,html.is-snap #dm-eh .eh-hung-go,html.is-snap #dm-eh .mf-cb-side,html.is-snap #dm-eh .ehx-coal-clr{visibility:hidden}
+html.is-snap #dm-eh .res-tip,html.is-snap #dm-eh .res-refresh,html.is-snap #dm-eh .mf-res-more{display:none!important}
