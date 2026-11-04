@@ -1,0 +1,69 @@
+/* library.css — the graphics library: a grey page, the graphics on it in their own white cards (Daily Maverick: Geist for the interface,
+   DM Custom for headings, Charis SIL for copy). */
+:root{--dm-red:#CA2828;--dm-red-dark:#A61212;--ink-1:#171717;--ink-2:#292929;--ink-3:#414343;--ink-4:#6B6C6D;--hair:#D4D4D4;--hair-2:#E2E2E2;--page:#F2F2F2;--ui:"Geist","Helvetica Neue",Arial,sans-serif;--display:"DM Custom",Georgia,serif;--serif:"Charis SIL",Georgia,"Times New Roman",serif}
+*{box-sizing:border-box}
+html{background:var(--page)}
+body{margin:0;font-family:var(--ui);color:var(--ink-1);-webkit-font-smoothing:antialiased;text-wrap:pretty}
+a{color:var(--ink-1)}
+a:hover{color:var(--dm-red)}
+button{font:inherit}
+.lib-top{height:48px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 24px;border-bottom:1px solid var(--hair);background:var(--page);position:sticky;top:0;z-index:5}
+.lib-logo{height:18px;width:auto;display:block}
+.lib-kicker{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-4);text-align:right}
+.lib-main{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+.lib-intro{padding:44px 0 24px}
+.lib-intro h1{font-family:var(--display);font-size:42px;line-height:1.08;margin:0 0 14px}
+.lib-intro p{font-family:var(--serif);font-size:18px;line-height:1.6;max-width:780px;margin:0;color:var(--ink-2)}
+/* the preview settings */
+.lib-set{display:grid;gap:10px;padding:18px 0 22px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.lib-set-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4)}
+.lib-set-row > .lbl{width:132px;flex:none}
+.lib-seg{display:inline-flex;flex-wrap:wrap}
+.lib-seg button{height:32px;padding:0 13px;border:1px solid var(--ink-1);margin:0 -1px 0 0;background:#fff;color:var(--ink-1);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.lib-seg button:hover{background:#F7F7F7}
+.lib-seg button.is-on{background:var(--ink-1);color:#fff}
+.lib-set-note{margin:0;font-size:13px;line-height:1.5;color:var(--ink-3)}
+.lib-set-note:empty{display:none}
+.lib-base{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;line-height:1.5;color:var(--ink-3)}
+.lib-base code{font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-1);word-break:break-all}
+.lib-dot{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.lib-dot::before{content:"";width:8px;height:8px;border-radius:50%;background:#B7B7B7}
+.lib-dot.is-ok{color:#17843A}.lib-dot.is-ok::before{background:#17843A}
+.lib-dot.is-bad{color:var(--dm-red)}.lib-dot.is-bad::before{background:var(--dm-red)}
+.lib-group{font-family:var(--display);font-size:30px;line-height:1.1;margin:52px 0 0;padding:0 0 14px;border-bottom:2px solid var(--ink-1)}
+/* a graphic */
+.lib-cards{display:grid}
+.g{padding:30px 0 36px;border-bottom:1px solid var(--hair)}
+.g-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 32px;align-items:end;margin:0 0 16px}
+.g-head h3{font-family:var(--display);font-size:25px;line-height:1.15;margin:0 0 6px}
+.g-head p{font-family:var(--serif);font-size:16px;line-height:1.5;color:var(--ink-2);margin:0;max-width:640px}
+.g-pick{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:flex-end}
+.g-pick label{display:flex;flex-direction:column;gap:5px}
+.g-pick select{font:600 13px/1.2 var(--ui);color:var(--ink-1);height:34px;min-width:190px;max-width:300px;padding:0 30px 0 10px;border:1px solid var(--ink-1);border-radius:0;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25l4 4 4-4' fill='none' stroke='%23171717' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;-webkit-appearance:none}
+.g-pick .lib-seg button{height:34px}
+.g-stage{overflow-x:auto}
+.g-stage iframe{display:block;width:668px;max-width:100%;height:760px;border:0;background:transparent}
+.g-out{display:grid;gap:12px;margin-top:16px;max-width:100%}
+.g-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-width:0}
+.g-link code{flex:1 1 360px;min-width:0;padding:7px 10px;background:#fff;border:1px solid var(--hair);font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-1);word-break:break-all;user-select:all}
+.g-act{display:flex;flex-wrap:wrap;align-items:center;gap:10px 8px}
+.g-act .sep{flex:1}
+.g-act .grp{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:5px;border:1px solid var(--hair);background:#fff;color:var(--ink-1);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap;transition:transform .12s ease,box-shadow .12s ease}
+.btn:hover{transform:scale(1.035);box-shadow:0 1px 5px rgba(0,0,0,.16);color:var(--ink-1)}
+.btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+.btn.is-primary{background:var(--dm-red);border-color:var(--dm-red-dark);color:#fff;height:36px;padding:0 18px;font-size:12.5px}
+.btn.is-primary:hover{color:#fff}
+.btn.is-done{background:#17843A;border-color:#106B2D;color:#fff}
+.g-code{font-size:13px;color:var(--ink-3)}
+.g-code summary{cursor:pointer;width:max-content;font-weight:600;color:var(--ink-2)}
+.g-code textarea{display:block;width:100%;height:96px;margin-top:8px;resize:vertical;padding:8px 10px;border:1px solid var(--hair);background:#fff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-2)}
+.g-code p{margin:6px 0 0;font-size:12.5px;line-height:1.5}
+.g-msg{margin:0;min-height:18px;font-size:13px;color:var(--ink-3)}
+.g-msg.is-err{color:var(--dm-red)}
+.lib-notes{padding-top:44px;max-width:780px}
+.lib-notes h2{font-family:var(--display);font-size:24px;margin:0 0 12px}
+.lib-notes p{font-family:var(--serif);font-size:16px;line-height:1.6;margin:0 0 12px;color:var(--ink-2)}
+.lib-shot{position:fixed;left:0;top:0;border:0;opacity:0;pointer-events:none;z-index:-1}
+@media (max-width:760px){.g-head{grid-template-columns:minmax(0,1fr)}.g-pick{justify-content:flex-start}.g-pick select{min-width:0;max-width:100%}.lib-intro h1{font-size:32px}.lib-set-row > .lbl{width:auto}.lib-top{padding:0 16px}.lib-main{padding:0 16px 80px}}
