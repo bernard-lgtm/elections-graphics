@@ -2537,6 +2537,7 @@
 #dm-eh .res-map-svg .res-tip.is-pin{pointer-events:auto}
 #dm-eh .res-tip .res-tip-go{grid-column:1/-1;position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:34px;margin:8px 0 0;padding:0 12px;background:#fff;border:0;border-radius:3px;color:#181818;font-family:Archivo,"Helvetica Neue",Arial,sans-serif;font-stretch:87.5%;font-size:11px;font-weight:700;letter-spacing:.08em;line-height:1;text-transform:uppercase;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color .12s ease}
 #dm-eh .res-tip .res-tip-go::after{content:"";position:absolute;inset:-7px -8px}
+@media (hover: hover){#dm-eh .res-tip .res-tip-go:hover{background:#e9e9e9}}
 #dm-eh .res-tip .res-tip-go:active{background:#d4d4d4;transition-duration:0s}
 #dm-eh .res-tip .res-tip-go:focus-visible{outline:2px solid #fff;outline-offset:2px}
 #dm-eh .hm-svg .hm-tap{visibility:hidden;fill:rgba(0,0,0,.16);stroke:#181818;stroke-width:1.5px;pointer-events:none;transform:translateY(calc(var(--lift,0) * var(--u,.45) * -1px))}

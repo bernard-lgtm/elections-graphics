@@ -7,37 +7,23 @@
 <title>Elections 2026 graphics library v3 · Daily Maverick</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Charis+SIL:ital,wght@0,400;0,700;1,400&family=Geist:wght@400;500;600;700&family=Archivo:wdth,wght@87.5,700&display=swap">
 <style>@font-face{font-family:"DM Custom";src:url("fonts/DMCustomMar2026-V2-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}</style>
-<link rel="stylesheet" href="library.css">
+<link rel="stylesheet" href="library.css?v=16">
 </head>
 <body>
-<header class="lib-top"><a href="https://www.dailymaverick.co.za" aria-label="Daily Maverick"><img src="assets/DailyMaverickMasthead_BlackRed.svg" alt="Daily Maverick" class="lib-logo"></a><span class="lib-kicker">Graphics library v3 · Elections Hub v26</span></header>
+<header class="lib-brand"><a href="https://www.dailymaverick.co.za" aria-label="Daily Maverick"><img src="assets/DM_Masthead_2026.svg" alt="Daily Maverick" class="lib-logo" width="3495" height="441"></a><img src="assets/LGE2026-logo.webp" alt="Local Government Elections 2026" class="lib-lge" width="1000" height="394"></header>
+<nav class="lib-top" aria-label="Graphics library"></nav>
 <main class="lib-main">
-<section class="lib-intro">
-<h1>Elections 2026 graphics</h1>
-<p>Every graphic on the Elections Hub, ready for a story. Pick the area or the council, then copy the embed code and paste it into the article: the graphic keeps itself up to date as the Electoral Commission counts, and says how far the count has got. Each version has its own link, and an image of it can be downloaded as it stands.</p>
-</section>
-<section class="lib-set" aria-label="Preview settings">
-<div class="lib-set-row"><span class="lbl">Preview figures</span><span class="lib-seg" id="lib-data"><button type="button" data-v="live">Live results</button><button type="button" data-v="count">Sample: counting</button><button type="button" data-v="complete">Sample: count complete</button><button type="button" data-v="final">Sample: declared</button><button type="button" data-v="2021">2021 results</button></span></div>
-<div class="lib-set-row"><span class="lbl">Preview width</span><span class="lib-seg" id="lib-width"><button type="button" data-v="668">Article column · 668</button><button type="button" data-v="360">Phone · 360</button><button type="button" data-v="1100">Wide · 1100</button></span></div>
-<p class="lib-set-note" id="lib-data-note"></p>
-<div class="lib-base" id="lib-base"></div>
-</section>
 <h2 class="lib-group">South Africa and the provinces</h2>
 <div class="lib-cards" id="lib-cards-area"></div>
 <h2 class="lib-group">Councils and wards</h2>
 <div class="lib-cards" id="lib-cards-muni"></div>
-<section class="lib-notes">
-<h2>Using them</h2>
-<p><strong>Embed code.</strong> Copy embed code puts the graphic's frame on the clipboard: one iframe tag with a fixed height, the same on desktop and on phones. Paste it into the article's HTML block. Inside the frame the graphic lays itself out to fit that height at any width: maps are drawn as large as the room allows, and a list shows the rows that fit, with a link to the rest on the Elections Hub.</p>
-<p><strong>Link.</strong> Every version (graphic, place, view) has its own address. Use it where the editor takes a link to embed, or send it: opened on its own the graphic stands on a grey page.</p>
-<p><strong>Live.</strong> The graphic reads the Commission's results through Daily Maverick's results service every 5 minutes while the count is on, as often as the service updates. Beside its title a box shows where the count stands for that place, as on the Elections Hub: Counting in red, with the share of voting districts counted; Count complete in charcoal, the results provisional until the Commission declares them; Results declared in green. The time of the figures is in the source line at the foot, so a reader who meets it in an article knows how final it is.</p>
-<p><strong>Images.</strong> PNG is the graphic exactly as it stands in the preview, at the preview's width (PNG 2&times; twice as sharp, for phones and print). Square 1080 and Wide 1920 put the same graphic, drawn at a width that suits the format, on the library's grey for social posts and slides. Every image carries the time of its figures. The image embeds the graphic's own fonts (Geist, Charis SIL, Archivo and DM Custom, read from Google Fonts and this folder as it is drawn); if a font could not be read the message under the buttons says so, and the image falls back to system fonts. Use Chrome, Edge or Firefox; if a browser extension blocks Google Fonts, allow it for this page.</p>
-<p><strong>Preview figures</strong> change the previews only. Embed codes and links always show the live results.</p>
-</section>
 </main>
 <script src="config.js"></script>
-<script src="graphics.js"></script>
+<script src="graphics.js?v=7"></script>
 <script src="councils.js"></script>
-<script src="library.js"></script>
+<script src="library.js?v=14"></script>
+<script src="districts.js"></script>
+<script src="anchors.js?v=3"></script>
+<script src="illustrations.js?v=6"></script>
 </body>
 </html>

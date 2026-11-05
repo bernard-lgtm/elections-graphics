@@ -7,15 +7,15 @@ body{margin:0;font-family:var(--ui);color:var(--ink-1);-webkit-font-smoothing:an
 a{color:var(--ink-1)}
 a:hover{color:var(--dm-red)}
 button{font:inherit}
-.lib-top{height:48px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 24px;border-bottom:1px solid var(--hair);background:var(--page);position:sticky;top:0;z-index:5}
-.lib-logo{height:18px;width:auto;display:block}
-.lib-kicker{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-4);text-align:right}
+/* the top: Daily Maverick's masthead above the Local Government Elections logo, centred; under it
+   the bar of menus, which stays at the top of the window */
+.lib-brand{display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 24px 6px}
+.lib-lge{display:block;width:460px;max-width:100%;height:auto}
+.lib-logo{height:38px;width:auto;max-width:100%;display:block}
+.lib-top{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:10px 24px;background:var(--page)}
 .lib-main{max-width:1180px;margin:0 auto;padding:0 24px 96px}
-.lib-intro{padding:44px 0 24px}
-.lib-intro h1{font-family:var(--display);font-size:42px;line-height:1.08;margin:0 0 14px}
-.lib-intro p{font-family:var(--serif);font-size:18px;line-height:1.6;max-width:780px;margin:0;color:var(--ink-2)}
 /* the preview settings */
-.lib-set{display:grid;gap:10px;padding:18px 0 22px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.lib-set{display:grid;gap:10px;padding:18px 0 22px;border-bottom:1px solid var(--hair)}
 .lib-set-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
 .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4)}
 .lib-set-row > .lbl{width:132px;flex:none}
@@ -33,37 +33,124 @@ button{font:inherit}
 .lib-dot.is-bad{color:var(--dm-red)}.lib-dot.is-bad::before{background:var(--dm-red)}
 .lib-group{font-family:var(--display);font-size:30px;line-height:1.1;margin:52px 0 0;padding:0 0 14px;border-bottom:2px solid var(--ink-1)}
 /* a graphic */
-.lib-cards{display:grid}
-.g{padding:30px 0 36px;border-bottom:1px solid var(--hair)}
-.g-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 32px;align-items:end;margin:0 0 16px}
-.g-head h3{font-family:var(--display);font-size:25px;line-height:1.15;margin:0 0 6px}
-.g-head p{font-family:var(--serif);font-size:16px;line-height:1.5;color:var(--ink-2);margin:0;max-width:640px}
-.g-pick{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:flex-end}
+.lib-cards{display:grid}.lib-cards[hidden],.lib-group[hidden]{display:none}
+/* the graphic, and beside it (over it, where the two do not fit side by side) the pickers, one under the other, with the card's big
+   button (Copy embed code, or Download PNG at twice the size) and its message under them; the kind of graphic over the group's heading.
+   wrap-reverse puts the pickers' row on top when they wrap; in it flex-end is the top */
+.g{display:flex;flex-wrap:wrap-reverse;align-items:flex-end;gap:22px 40px;padding:30px 0 36px;border-bottom:1px solid var(--hair)}
+.g-mode{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 7px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dm-red)}
+.lib-mode{margin:52px 0 10px}.lib-mode + .lib-group{margin-top:0}
+.g-side{flex:0 0 240px;display:grid;gap:12px;align-content:start;min-width:0}
+.g-pick{display:flex;flex-direction:column;gap:12px}
 .g-pick label{display:flex;flex-direction:column;gap:5px}
-.g-pick select{font:600 13px/1.2 var(--ui);color:var(--ink-1);height:34px;min-width:190px;max-width:300px;padding:0 30px 0 10px;border:1px solid var(--ink-1);border-radius:0;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25l4 4 4-4' fill='none' stroke='%23171717' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;-webkit-appearance:none}
-.g-pick .lib-seg button{height:34px}
-.g-stage{overflow-x:auto}
+.g-pick select{font:600 13px/1.2 var(--ui);color:var(--ink-1);height:34px;width:100%;padding:0 30px 0 10px;border:1px solid var(--ink-1);border-radius:0;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25l4 4 4-4' fill='none' stroke='%23171717' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;-webkit-appearance:none}
+.g-pick .lib-seg{padding:0 1px 1px 0}
+.g-pick .lib-seg button{flex:1 1 auto;height:34px;margin:0 -1px -1px 0;padding:0 10px}
+.g-stage{order:-1;flex:1 1 auto;min-width:0;overflow-x:auto}
 .g-stage iframe{display:block;width:668px;max-width:100%;height:760px;border:0;background:transparent}
-.g-out{display:grid;gap:12px;margin-top:16px;max-width:100%}
-.g-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;min-width:0}
-.g-link code{flex:1 1 360px;min-width:0;padding:7px 10px;background:#fff;border:1px solid var(--hair);font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-1);word-break:break-all;user-select:all}
-.g-act{display:flex;flex-wrap:wrap;align-items:center;gap:10px 8px}
-.g-act .sep{flex:1}
-.g-act .grp{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+/* v3.4 · a still graphic's frame is always laid out at the width picked (the image's); a narrower window shows it smaller (library.js fitStill) */
+.g.is-still .g-stage{overflow:hidden}
+.g.is-still .g-stage iframe{max-width:none;transform-origin:0 0}
 .btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:5px;border:1px solid var(--hair);background:#fff;color:var(--ink-1);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-decoration:none;cursor:pointer;white-space:nowrap;transition:transform .12s ease,box-shadow .12s ease}
 .btn:hover{transform:scale(1.035);box-shadow:0 1px 5px rgba(0,0,0,.16);color:var(--ink-1)}
 .btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
 .btn.is-primary{background:var(--dm-red);border-color:var(--dm-red-dark);color:#fff;height:36px;padding:0 18px;font-size:12.5px}
 .btn.is-primary:hover{color:#fff}
+.btn.is-big{width:100%;height:52px;padding:0 20px;border-radius:8px;font-size:14px;letter-spacing:.05em}
+.btn.is-big:hover{transform:scale(1.015)}
+.g-pick select{text-overflow:ellipsis}
 .btn.is-done{background:#17843A;border-color:#106B2D;color:#fff}
-.g-code{font-size:13px;color:var(--ink-3)}
-.g-code summary{cursor:pointer;width:max-content;font-weight:600;color:var(--ink-2)}
-.g-code textarea{display:block;width:100%;height:96px;margin-top:8px;resize:vertical;padding:8px 10px;border:1px solid var(--hair);background:#fff;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-2)}
-.g-code p{margin:6px 0 0;font-size:12.5px;line-height:1.5}
-.g-msg{margin:0;min-height:18px;font-size:13px;color:var(--ink-3)}
+.g-msg{margin:0;font-size:13px;line-height:1.45;color:var(--ink-3)}
+.g-msg:empty{display:none}
 .g-msg.is-err{color:var(--dm-red)}
 .lib-notes{padding-top:44px;max-width:780px}
 .lib-notes h2{font-family:var(--display);font-size:24px;margin:0 0 12px}
 .lib-notes p{font-family:var(--serif);font-size:16px;line-height:1.6;margin:0 0 12px;color:var(--ink-2)}
 .lib-shot{position:fixed;left:0;top:0;border:0;opacity:0;pointer-events:none;z-index:-1}
-@media (max-width:760px){.g-head{grid-template-columns:minmax(0,1fr)}.g-pick{justify-content:flex-start}.g-pick select{min-width:0;max-width:100%}.lib-intro h1{font-size:32px}.lib-set-row > .lbl{width:auto}.lib-top{padding:0 16px}.lib-main{padding:0 16px 80px}}
+/* the menus: Interactive graphics and Still graphics in the bar open every graphic, in the page's two groups, with a snapshot of each */
+.lib-nav{display:flex;align-items:center;gap:10px}
+.lib-nav-lead{margin:0 0 -12px;max-width:760px;font-family:var(--serif);font-size:15px;line-height:1.5;color:var(--ink-2)}
+.lib-nav-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 16px;border:1px solid var(--ink-1);border-radius:8px;background:#fff;color:var(--ink-1);font-size:14px;font-weight:600;line-height:1;letter-spacing:-.005em;cursor:pointer;white-space:nowrap}
+.lib-nav-btn:hover{background:#F7F7F7}
+.lib-nav-btn.is-active,.lib-nav-btn[aria-expanded="true"]{background:var(--ink-1);color:#fff}
+.lib-nav-btn svg{flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.7;transition:transform .15s ease}
+.lib-nav-btn[aria-expanded="true"] svg{transform:rotate(180deg)}
+.lib-page-btn{padding:0 16px}
+.lib-nav-scrim{position:fixed;left:0;right:0;top:var(--bar-b,61px);bottom:0;background:rgba(23,23,23,.32)}
+.lib-nav-panel{position:absolute;left:0;right:0;top:100%;max-height:calc(100vh - var(--bar-b,61px));overflow-y:auto;overscroll-behavior:contain;background:var(--page);border-bottom:1px solid var(--hair);box-shadow:0 18px 36px -14px rgba(0,0,0,.3)}
+.lib-nav-scrim[hidden],.lib-nav-panel[hidden]{display:none}
+.lib-nav-in{max-width:1180px;margin:0 auto;padding:22px 24px 30px;display:grid;gap:28px}
+.lib-nav-hd{display:grid;gap:10px;margin:0 0 -4px}.lib-nav-hd .lib-nav-lead{margin:0}
+.lib-nav-tl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.lib-nav-title{font-family:var(--display);font-size:42px;line-height:1.08;margin:0}
+.lib-nav-only{display:inline-flex;align-items:center;min-height:32px;padding:4px 12px;border-radius:4px;background:var(--dm-red);color:#fff;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.g-only{padding:3px 7px;border-radius:3px;background:var(--dm-red);color:#fff}
+.lib-nav-h{font-family:var(--display);font-size:19px;line-height:1.15;margin:0 0 14px;padding:0 0 9px;border-bottom:2px solid var(--ink-1)}
+.lib-nav-tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 16px}
+.lib-nav-tile{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lib-nav-a{display:flex;flex-direction:column;gap:9px;color:var(--ink-1);text-decoration:none}
+.lib-nav-img{display:block;aspect-ratio:4/3;background:#fff;border:1px solid var(--hair);overflow:hidden;transition:border-color .12s ease,box-shadow .12s ease}
+.lib-nav-img img{display:block;width:100%;height:100%;object-fit:cover}
+.lib-nav-a:hover .lib-nav-img,.lib-nav-a:focus-visible .lib-nav-img{border-color:var(--ink-1);box-shadow:0 2px 10px rgba(0,0,0,.14)}
+.lib-nav-a:focus-visible{outline:none}.lib-nav-tile.is-current .lib-nav-img{border-color:var(--ink-1);box-shadow:0 0 0 1px var(--ink-1)}
+.lib-nav-name{font-family:var(--display);font-size:15.5px;line-height:1.2}
+.lib-nav-a:hover .lib-nav-name,.lib-nav-a:focus-visible .lib-nav-name{color:var(--dm-red)}
+.lib-nav-views{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:12px;line-height:1.35}
+.lib-nav-views a{color:var(--ink-3);font-weight:500;text-decoration:none}
+.lib-nav-views a:hover,.lib-nav-views a:focus-visible{color:var(--dm-red);text-decoration:underline}
+/* a card arrived at from the menu */
+.g{scroll-margin-top:76px}
+.g.is-target{animation:lib-arrive 2.4s ease-out}
+@keyframes lib-arrive{0%,35%{background:#fff;box-shadow:0 0 0 16px #fff}100%{background:rgba(255,255,255,0);box-shadow:0 0 0 16px rgba(255,255,255,0)}}
+@media (max-width:1020px){.lib-nav-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){.lib-brand{padding:14px 16px 4px}.lib-lge{width:400px}}
+@media (max-width:560px){.lib-nav-x{display:none}}
+@media (max-width:560px){.lib-nav-title{font-size:32px}.lib-nav-in{padding:18px 16px 26px;gap:24px}.lib-nav-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}}
+/* the pages: Hub anchors (a link to every part of the Elections Hub, anchors.js) and Header illustrations (illustrations.js), a button each
+   in the bar that puts its page in the graphic's place */
+.lib-main.is-page > :not(.lib-page),.lib-page[hidden]{display:none}
+.lib-page-lead{margin:18px 0 0;max-width:760px;font-family:var(--serif);font-size:16px;line-height:1.55;color:var(--ink-2)}
+.lib-anc,.lib-ill{display:flex;align-items:center}
+.ill-in{display:grid;gap:20px;padding:0 0 30px}
+.ill-cta{display:grid;justify-items:center;gap:14px;padding:36px 0 8px;text-align:center}.ill-cta .lib-page-lead{margin:0;max-width:560px}
+.btn.ill-go{width:440px;max-width:100%;height:68px;border-radius:10px;font-size:17px}
+.ill-ex{display:grid;gap:12px;width:100%;margin-top:14px;padding-top:20px;border-top:1px solid var(--hair)}
+.ill-pair{display:grid;grid-template-columns:minmax(0,1.501fr) minmax(0,1.792fr);gap:16px;align-items:start}
+.ill-fig{margin:0;display:grid;gap:8px;min-width:0}
+.ill-fig img{display:block;width:100%;height:auto;border:1px solid var(--hair);background:#fff}
+@media (max-width:760px){.ill-pair{grid-template-columns:minmax(0,1fr)}}
+.anc-in{display:grid;gap:22px;padding:0 0 30px}
+.anc-out{position:sticky;top:var(--bar-h,61px);z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:18px 0 14px;background:var(--page);border-bottom:1px solid var(--hair)}
+.anc-out code{flex:1 1 360px;min-width:0;padding:7px 10px;background:#fff;border:1px solid var(--hair);font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-1);word-break:break-all;user-select:all}
+.anc-msg{flex:1 0 100%;margin:0;min-height:18px;font-size:13px;line-height:1.4;color:var(--ink-3)}
+.anc-cols{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1fr) minmax(0,1.15fr);gap:28px 32px;align-items:start}
+.anc-picks{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 12px}
+.anc-picks label{display:flex;flex-direction:column;gap:5px;flex:1 1 200px;min-width:0}
+.anc-picks label.anc-ward{flex:0 1 130px}
+.anc-picks label[hidden]{display:none}
+.anc-picks select{font:600 13px/1.2 var(--ui);color:var(--ink-1);height:34px;width:100%;padding:0 30px 0 10px;border:1px solid var(--ink-1);border-radius:0;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25l4 4 4-4' fill='none' stroke='%23171717' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;-webkit-appearance:none}
+.anc-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--hair)}
+.anc-a{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 12px;width:100%;padding:9px 10px;border:0;border-bottom:1px solid var(--hair);background:transparent;color:var(--ink-1);text-align:left;cursor:pointer}
+.anc-a:hover{background:#fff}
+.anc-a:focus-visible{outline:2px solid var(--ink-1);outline-offset:-2px}
+.anc-name{font-size:14px;font-weight:600;line-height:1.3}
+.anc-a code{font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink-3);overflow-wrap:anywhere;text-align:right}
+.is-part .anc-a{padding-left:24px}
+.is-part .anc-name{font-weight:500;color:var(--ink-2)}
+.anc-a.is-on{background:var(--ink-1)}
+.anc-a.is-on .anc-name,.anc-a.is-on code{color:#fff}
+.anc-note{margin:10px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-3)}
+@media (max-width:900px){.anc-cols{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){.lib-top,.lib-nav{gap:8px}.lib-nav-btn{height:36px;padding:0 12px;gap:6px;font-size:13px}.lib-nav-btn svg{display:none}}
+@media (max-width:480px){.anc-out{padding-top:14px}}
+@media (max-width:760px){.g-side{flex-basis:100%}.lib-set-row > .lbl{width:auto}.lib-top{padding:10px 16px}.lib-main{padding:0 16px 80px}}
+/* the open menus: black, with white type */
+.lib-nav-panel{--dm-red-lt:oklch(.72 .15 25);background:var(--ink-1);color:#fff;border-bottom-color:#000;color-scheme:dark}
+.lib-nav-panel .lib-nav-lead{color:var(--hair)}
+.lib-nav-panel .lib-nav-h{border-bottom-color:#fff}
+.lib-nav-panel .lib-nav-a{color:#fff}
+.lib-nav-panel .lib-nav-img{border-color:var(--ink-1)}
+.lib-nav-panel .lib-nav-a:hover .lib-nav-img,.lib-nav-panel .lib-nav-a:focus-visible .lib-nav-img{border-color:#fff;box-shadow:none}
+.lib-nav-panel .lib-nav-tile.is-current .lib-nav-img{border-color:#fff;box-shadow:0 0 0 1px #fff}
+.lib-nav-panel .lib-nav-a:hover .lib-nav-name,.lib-nav-panel .lib-nav-a:focus-visible .lib-nav-name,.lib-nav-panel .lib-nav-views a:hover,.lib-nav-panel .lib-nav-views a:focus-visible{color:var(--dm-red-lt)}
+.lib-nav-panel .lib-nav-views a{color:#B7B7B7}

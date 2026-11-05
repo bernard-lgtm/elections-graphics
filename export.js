@@ -195,8 +195,8 @@
     return Promise.all([fonts().then(function (f) { tm('fonts'); return f; }), images(root).then(function (x) { tm('images'); return x; }), ready.then(function (x) { tm('ready ' + x); return x; })]).then(function (got) {
       html.classList.add('is-snap');
       if (window.EH_EMBED && EH_EMBED.stamp) EH_EMBED.stamp();
-      // the credit grows by the time of the figures (two lines on a narrow card), so the room over it shrinks: the lists and maps are fitted
-      // to it again before the copy is made, or a row the page showed would be cut in the image
+      // the credit shows the hub's address in the link's place, so the room over it can change: the lists and maps are fitted to it again
+      // before the copy is made, or a row the page showed would be cut in the image
       if (window.EH_FIT && EH_FIT.fit) { try { EH_FIT.fit(); } catch (e) {} }
       return frames(2).then(function () {
         still();

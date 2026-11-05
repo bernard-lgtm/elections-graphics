@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Elections 2026 · Daily Maverick</title>
-<link rel="stylesheet" href="hub/elections-hub-post-v26.css">
+<link rel="stylesheet" href="hub/elections-hub-post-v26.css?v=2">
 <style>@font-face{font-family:"DM Custom";src:url("fonts/DMCustomMar2026-V2-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}</style>
-<link rel="stylesheet" href="embed.css?v=6">
-<link rel="stylesheet" href="embed-fit.css?v=11">
+<link rel="stylesheet" href="embed.css?v=28">
+<link rel="stylesheet" href="embed-fit.css?v=19">
 <script src="config.js"></script>
-<script src="graphics.js"></script>
-<script src="embed-boot.js?v=3"></script>
+<script src="graphics.js?v=7"></script>
+<script src="embed-boot.js?v=7"></script>
 </head>
 <body>
 <!-- One graphic of the Elections Hub (post-elections v26), picked by the address: see README.md. The markup is the hub's (the municipality finder and the results tabs), without its mastheads, story feeds and buttons; embed.js adds the title, the count's progress and the credit around the graphic. -->
@@ -27,19 +27,18 @@
 <script type="application/json" id="eh-sittings">{}</script>
 </div>
 <script>
-/* the settings in config.js on the hub's root, then the hub: the live build, or the preview build for the sample count and the 2021 results */
+/* the settings in config.js on the hub's root, then the hub's live build */
 (function () {
-  var C = window.EHX_CONFIG || {}, X = window.EHX || {}, r = document.getElementById('dm-eh'), q = new URL(location.href).searchParams, dec = C.declared || '';
-  if (X.data === 'sample') dec = q.get('decl') === '1' ? q.get('now') || '2026-11-05' : '';
-  if (dec) r.setAttribute('data-declared', dec);
+  var C = window.EHX_CONFIG || {}, r = document.getElementById('dm-eh');
+  if (C.declared) r.setAttribute('data-declared', C.declared);
   if (C.deadline) r.setAttribute('data-deadline', C.deadline);
   if (C.votingDay) r.setAttribute('data-voting-day', C.votingDay);
   if (C.sittings && Object.keys(C.sittings).length) document.getElementById('eh-sittings').textContent = JSON.stringify(C.sittings);
-  document.write('<script src="hub/elections-hub-post-v26' + (X.build === 'preview' ? '-preview' : '') + '.js?v=3"><\/script>');
 })();
 </script>
+<script src="hub/elections-hub-post-v26.js?v=5"></script>
 <script src="export.js?v=2"></script>
-<script src="embed.js?v=8"></script>
-<script src="embed-fit.js?v=8"></script>
+<script src="embed.js?v=24"></script>
+<script src="embed-fit.js?v=17"></script>
 </body>
 </html>

@@ -1,3 +1,7 @@
+/* Graphics library v3.1 (4 November 2026): a council clicked with a mouse on the Councils by leading party, Councils by turnout and Hung
+   councils maps of a province does as a tap does: it stands up with its tooltip and Go to municipality, which opens it on the Elections Hub
+   (Change since 2021's maps already did). While it stands the pointer's hover rests; a click on another council moves it there, a click off
+   the councils or off the map, or Escape, puts it down. See "library v3.1" below. */
 /* Graphics library v3 (4 November 2026): the council, province and ward maps come from the RevEngine IEC service's maps, the service the
    results come from, with the Demarcation Board's map services standing in only when a map can't be read (see "the feed's maps"), and a
    ward's candidates come from the same service, read for that ward (wardList in "results"): data/ holds only ward-geo.json, for Use my
@@ -6703,7 +6707,7 @@ guard("results", function () {
       if (o.state === 'majority') return lead + '<span class="res-oc is-maj">Majority</span>';
       if (o.state === 'hung') return lead + '<span class="res-oc is-hung">Hung council</span>';
       if (o.state === 'declared') return lead + '<span class="res-oc">Count complete</span>';
-      return lead + '<span class="res-oc is-count">' + decPct(R) + ' declared</span>';
+      return lead + '<span class="res-oc is-count">' + decPct(R) + ' counted</span>';
     }
 
     // Ward box: the winner (or leader) on the left; on the right (post-elections v21) Share on WhatsApp, with the source line under it,
@@ -8045,24 +8049,23 @@ guard("results across South Africa", function () {
     }
     $map.addEventListener('pointerdown', function (e) { cmPtr = e.pointerType || ''; });
     $map.addEventListener('click', function (e) {
-      var t = e.target, b = t.closest && t.closest('[data-mode]'), go = t.closest && t.closest('[data-go]'), tap = tapPtr(cmPtr), g, p, c, cp, r;
-      if (go) { cmPinOff(); open(go.getAttribute('data-go')); return; }   // v23.38: Go to municipality, in a council's tooltip on a touch screen
+      var t = e.target, b = t.closest && t.closest('[data-mode]'), go = t.closest && t.closest('[data-go]'), g, p, c, cp, r;
+      if (go) { cmPinOff(); open(go.getAttribute('data-go')); return; }   // v23.38: Go to municipality, in a council's tooltip (library v3.1: with a mouse too)
       if (t.closest && t.closest('.res-tip')) return;
       if (b) { if (b.getAttribute('aria-pressed') !== 'true') { view.mode = b.getAttribute('data-mode'); paintMap(); } return; }
       if (t.closest && t.closest('[data-back]')) { cmPinOff(); setView(''); return; }
       // v13: in a province, a council opens its file (and its neighbours their province); over the whole country, a council opens its province.
-      // v23.38: on a touch screen a council in the province stands up with its tooltip and Go to municipality (cmPinShow)
+      // v23.38: on a touch screen a council in the province stands up with its tooltip and Go to municipality (cmPinShow); library v3.1: with a mouse too
       c = t.closest && t.closest('path[data-c]');
       if (c) {
         cp = c.getAttribute('data-pc');
-        if (view.pc && cp === view.pc) { if (tap) { if (!cmPin || cmPin.c !== c.getAttribute('data-c')) cmPinShow(c, e.clientX, e.clientY); } else if (c.getAttribute('data-k')) open(c.getAttribute('data-k')); }
+        if (view.pc && cp === view.pc) { if (!cmPin || cmPin.c !== c.getAttribute('data-c')) cmPinShow(c, e.clientX, e.clientY); }
         else { cmPinOff(); if (PROVS[cp]) setView(cp); }
         return;
       }
       g = t.closest && t.closest('g[data-k]');
       if (g) {
         if (!view.pc) setView(MUNIS[g.getAttribute('data-k')].p);
-        else if (!tap) open(g.getAttribute('data-k'));
         else if (!cmPin || cmPin.k !== g.getAttribute('data-k')) { r = (g.querySelector('.dot') || g).getBoundingClientRect(); cmPinShow(g, r.left + r.width / 2, r.top); }
         return;
       }
@@ -8072,9 +8075,8 @@ guard("results across South Africa", function () {
     });
     // the mouse (v23.38: pointer events, a touch left out: on a touch screen a tap is the click's, above)
     $map.addEventListener('pointerover', function (e) {
-      if (tapPtr(e.pointerType)) return;
+      if (tapPtr(e.pointerType) || cmPin) return;   // library v3.1: no hover while a council clicked stands
       var t = e.target, c = t.closest && t.closest('path[data-c]'), g = !c && t.closest && t.closest('g[data-k]'), p = !c && !g && t.closest && t.closest('path[data-prov]'), r, pc, R;
-      cmPinOff();
       cmHov(c);
       if (c) { cmTip(e, c); return; }   // v13: a council: its province or (v13.18) itself raised, and its tooltip
       if (g) { r = (g.querySelector('.dot') || g).getBoundingClientRect(); R = councilR(g.getAttribute('data-k')); tipHtml(r.left + r.width / 2, r.top, tipBody(String(g.getAttribute('data-tip') || '').split('|')[0], R, R ? R$.outcome(R) : null)); return; }
@@ -8082,19 +8084,20 @@ guard("results across South Africa", function () {
       tipOff();
     });
     $map.addEventListener('pointermove', function (e) {
-      if (tapPtr(e.pointerType)) return;
+      if (tapPtr(e.pointerType) || cmPin) return;
       var c = e.target.closest && e.target.closest('path[data-c]'), p = !c && e.target.closest && e.target.closest('path[data-prov]'), pc;
       if (c) { cmTip(e, c); return; }   // v13: the tooltip follows the pointer over a council
       if (p) { pc = p.getAttribute('data-prov'); tipHtml(e.clientX, e.clientY, tipBody(PROVS[pc], provR(pc), null)); }
     });
-    $map.addEventListener('pointerleave', function (e) { if (tapPtr(e.pointerType)) return; tipOff(); cmHov(null); });
-    document.addEventListener('pointerdown', function (e) { if (cmPin && !$map.contains(e.target)) cmPinOff(); }, true);   // v23.38: a touch off the map
+    $map.addEventListener('pointerleave', function (e) { if (tapPtr(e.pointerType) || cmPin) return; tipOff(); cmHov(null); });
+    document.addEventListener('pointerdown', function (e) { if (cmPin && !$map.contains(e.target)) cmPinOff(); }, true);   // v23.38: a touch off the map (library v3.1: or a click)
+    document.addEventListener('keydown', function (e) { if (cmPin && e.key === 'Escape') cmPinOff(); });   // library v3.1
 
     /* ---- table: provinces, or the councils of one province ---- */
     function outcomeCell(R, o) {
       if (o.state === 'majority') return '<span class="res-oc is-maj">Majority</span>';
       if (o.state === 'hung') return '<span class="res-oc is-hung">Hung council</span>';
-      if (o.state === 'counting') return '<span class="res-oc is-count">' + R$.decPct(R) + ' declared</span>';
+      if (o.state === 'counting') return '<span class="res-oc is-count">' + R$.decPct(R) + ' counted</span>';
       if (o.state === 'declared') return '<span class="res-oc">Count complete</span>';   // v14: the seats not yet published; Majority and No majority once they are
       return '<span class="res-oc is-na">\u2014</span>';
     }
@@ -8296,8 +8299,8 @@ guard("hung councils", function () {
     $grid = $b.firstChild; $hmap = $grid.firstChild; $stand = $grid.lastChild.firstChild; $rest = $b.lastChild;
     // v23.38: the mouse (pointer events, a touch left out: on a touch screen a tap is the click's, see hmPinShow)
     $hmap.addEventListener('pointerdown', function (e) { HM.ptr = e.pointerType || ''; });
-    $hmap.addEventListener('pointermove', function (e) { if (tapPtr(e.pointerType)) return; hmPinOff(); hmMove(e); });
-    $hmap.addEventListener('pointerleave', function (e) { if (tapPtr(e.pointerType)) return; hmTipOff(); hmProvOff(); });
+    $hmap.addEventListener('pointermove', function (e) { if (tapPtr(e.pointerType) || HM.pin) return; hmMove(e); });   // library v3.1: no hover while a council clicked stands
+    $hmap.addEventListener('pointerleave', function (e) { if (tapPtr(e.pointerType) || HM.pin) return; hmTipOff(); hmProvOff(); });
   }
   function paint() {
     var pc = areaPc(), t = scan(pc), L = t.list;
@@ -8578,7 +8581,7 @@ guard("hung councils", function () {
     if (c) {   // v22: a council on the map (v22.1: or the province standing up, which opens). v23.38: on a touch screen, in a province, its tooltip with Go to municipality
       i = +c.getAttribute('data-i');
       if (c.hasAttribute('data-pc')) { hmPinOff(); if (A) A.set(c.getAttribute('data-pc')); }
-      else if (HM.pc && tapPtr(HM.ptr)) { if (!HM.pin || HM.pin.i !== i) hmPinShow(i, e.clientX, e.clientY); }
+      else if (HM.pc) { if (!HM.pin || HM.pin.i !== i) hmPinShow(i, e.clientX, e.clientY); }   // library v3.1: with a mouse too
       else { hmPinOff(); hmPick(HM.list[i]); }
       return;
     }
@@ -8588,7 +8591,8 @@ guard("hung councils", function () {
     var cb = t.closest('[data-cb]');
     if (cb) { if (window.DM_EH_COAL) window.DM_EH_COAL(cb.getAttribute('data-cb')); return; }
   });
-  document.addEventListener('pointerdown', function (e) { if (HM.pin && !(HM.box && HM.box.contains(e.target))) hmPinOff(); }, true);   // v23.38: a touch off the map
+  document.addEventListener('pointerdown', function (e) { if (HM.pin && !(HM.box && HM.box.contains(e.target))) hmPinOff(); }, true);   // v23.38: a touch off the map (library v3.1: or a click)
+  document.addEventListener('keydown', function (e) { if (HM.pin && e.key === 'Escape') hmPinOff(); });   // library v3.1
   function start() {
     if (started) return;
     started = true;
@@ -10634,7 +10638,7 @@ guard("municipality finder", function () {
       // width inside it; the column beside the map comes and goes at the box's own width, as before
       function wmInset(M) { return Math.round(parseFloat(getComputedStyle(M.el).getPropertyValue('--wm-in')) || 0); }
       function wmCols(M) {
-        var out = Math.round(M.el.clientWidth) || 600, inset = wmInset(M), full = out - 2 * inset, side = out >= 600, sw = side ? Math.round(Math.max(210, Math.min(260, full * 0.32))) : 0;
+        var out = Math.round(M.el.clientWidth) || 600, inset = wmInset(M), full = out - 2 * inset, side = out >= 600 && !(window.EHX && window.EHX.wmStack), sw = side ? Math.round(Math.max(210, Math.min(260, full * 0.32))) : 0;
         M.el.classList.toggle('has-side', side);
         if (side) M.el.style.setProperty('--wm-side', sw + 'px'); else M.el.style.removeProperty('--wm-side');
         return { full: full, side: side, sw: sw, inset: inset };
