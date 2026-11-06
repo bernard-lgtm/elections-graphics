@@ -162,43 +162,85 @@
     if (row.getAttribute('data-ehx-bal') !== counts.join(',')) row.setAttribute('data-ehx-bal', counts.join(','));
   }
   function fitCoal() {
-    var b = $('.mf-res-seats .mf-res-board'), stg = b && b.querySelector('.ehh-stage'), fig = stg && stg.parentElement, inner = fill.firstElementChild, row = $('.mf-res-seats .mf-coal-row');
+    var b = $('.mf-res-seats .mf-res-board'), stg = b && b.querySelector('.ehh-stage'), fig = stg && stg.parentElement, inner = fill.firstElementChild, row = $('.mf-res-seats .mf-coal-row'), box = b && b.parentElement;
     if (!stg || !shown(stg) || !inner) return;
     var r = stg.getBoundingClientRect(), k = r.width ? r.height / r.width : 0;
     if (!k) return;
     var m = /min\(100%,\s*([\d.]+)px\)/.exec(fig.getAttribute('style') || ''), sw = m ? +m[1] : 600, cs = getComputedStyle(fill), on = shown(row);
-    var room = fill.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), maxW = b.parentElement.clientWidth - 12;   // 12: the board's padding at its sides
+    var room = fill.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom), maxW = box.clientWidth - 12;   // 12: the board's padding at its sides
     function key() { return [room, maxW, sw, k.toFixed(4), on ? (row.getAttribute('data-sig') || '') + '|' + (row.getAttribute('data-ehx-bal') || '') + '|' + row.clientWidth + '|' + Math.round(row.getBoundingClientRect().height) : ''].join('/'); }
     if (b.classList.contains('ehx-sized') && key() === kcKey) return;
-    // everything but the half circle, with the buttons at size v in their rows
+    // the half circle over the parties: everything but the half circle, with the buttons at size v in their rows
+    side(box, row, false);
     function rest(v) { setKc(v); if (on) balance(row); return inner.getBoundingClientRect().height - stg.getBoundingClientRect().height; }
     var w = Math.max(220, Math.floor(Math.min(maxW, sw * HW_MAX, (room - rest(1)) / k))), lo = 1, hi = phone && phone.matches ? KC_PHONE : KC_MAX, i, mid;
     if (on && hi > lo) {
       if (rest(hi) + w * k <= room) lo = hi;
       else for (i = 0; i < 7; i++) { mid = (lo + hi) / 2; if (rest(mid) + w * k <= room) lo = mid; else hi = mid; }
     }
-    setKc(Math.floor(lo * 100) / 100);
+    var kc = Math.floor(lo * 100) / 100, best = null;
+    setKc(kc);
     if (on) balance(row);
+    /* v3.7 · the parties beside the half circle (a frame 561px wide or more: the code's height is a phone's, so the article column has width
+       to spare and little height): in as many columns as the room under the Majority flag's needs, at 1.4, 1.2 or 1 times the hub's size,
+       wherever that draws the half circle larger than over them (the largest half circle; within 4px, the larger buttons) */
+    if (on && document.documentElement.clientWidth >= SIDE_W) {
+      var bx = b.getBoundingClientRect().height - stg.getBoundingClientRect().height, out = inner.getBoundingClientRect().height - box.getBoundingClientRect().height;
+      side(box, row, true);
+      var pad = parseFloat(getComputedStyle(row).paddingTop) || 0, byH = (room - out - bx) / k;
+      SIDE_KC.forEach(function (v) {
+        if (v > (phone && phone.matches ? KC_PHONE : KC_MAX)) return;
+        setKc(v);
+        var cps = [].slice.call(row.children).filter(function (c) { return c.classList.contains('mf-cp') && shown(c); });
+        if (!cps.length) return;
+        var ch = Math.max.apply(null, cps.map(function (el) { var t = /^matrix\(\s*([-\d.e]+)/.exec(getComputedStyle(el).transform || ''), q = t ? Math.abs(+t[1]) || 1 : 1; return el.getBoundingClientRect().height / q; }));
+        var rg = parseFloat(getComputedStyle(row).rowGap) || 0, n = Math.max(1, Math.floor((room - out - pad + rg) / (ch + rg))), cc = Math.ceil(cps.length / n);
+        row.style.setProperty('--ehx-cc', String(cc));
+        var ww = Math.floor(Math.min(box.clientWidth - row.getBoundingClientRect().width - SIDE_GAP - 12, sw * HW_MAX, byH));
+        if (!best || ww > best.w + 4) best = { w: ww, kc: v, cc: cc };
+      });
+      if (best && best.w > w + 4) { setKc(best.kc); row.style.setProperty('--ehx-cc', String(best.cc)); w = Math.max(220, best.w); }
+      else { side(box, row, false); setKc(kc); balance(row); }
+    }
     var s = w / sw, set = { '--ehx-fw': w + 'px', '--ehx-kn': Math.min(s, 1.75).toFixed(3), '--ehx-kt': Math.min(s, 1.25).toFixed(3) };
     if (b.style.maxWidth) b.style.maxWidth = '';
     for (var p in set) if (b.style.getPropertyValue(p) !== set[p]) b.style.setProperty(p, set[p]);
     if (!b.classList.contains('ehx-sized')) b.classList.add('ehx-sized');
     kcKey = key();
   }
+  // the parties beside the half circle (embed.css: .ehx-side, in --ehx-cc columns) or under it, in the rows balance() breaks
+  var SIDE_W = 561, SIDE_GAP = 28, SIDE_KC = [1.4, 1.2, 1];
+  function side(box, row, on) {
+    if (box.classList.contains('ehx-side') !== on) box.classList.toggle('ehx-side', on);
+    if (!row) return;
+    if (on) { [].slice.call(row.querySelectorAll(':scope > .ehx-br')).forEach(function (br) { br.remove(); }); if (row.hasAttribute('data-ehx-bal')) row.removeAttribute('data-ehx-bal'); }
+    else if (row.style.getPropertyValue('--ehx-cc')) row.style.removeProperty('--ehx-cc');
+  }
 
-  /* ---- Council seats: the list under the box keeps the room of five rows and a half (every row, where there are fewer); where the half
-     circle at its own width leaves it less (a long title, a phone), the half circle is drawn narrower, so lower, by what it takes ---- */
+  /* ---- Council seats: the code's height is measured for the council (library.js, v3.7), so every row shows under the half circle at its own
+     width. In a frame short of them (a code copied before the seats were in, or before v3.7) the list keeps the room of four rows and a half,
+     the half circle drawn narrower, so lower, by what it takes, and the rows scroll (fitLists). With room to spare (the code is as tall as
+     the article column or a phone needs, whichever needs more: on the other the graphic is a little shorter), the rows stand further apart,
+     up to 12px each (--ehx-rp, half of it over and half under each, embed.css), so there is no gap over the credit ---- */
+  var RP_MAX = 6;
   function fitSeats() {
-    var b = $('.mf-res-seats .mf-res-board'), stg = b && b.querySelector('.ehh-stage'), fig = stg && stg.parentElement, body = $('.ehx-seats-b'), row = body && body.firstElementChild, val = '';
+    var b = $('.mf-res-seats .mf-res-board'), stg = b && b.querySelector('.ehh-stage'), fig = stg && stg.parentElement, body = $('.ehx-seats-b'), row = body && body.firstElementChild, val = '', rp = 0;
     if (!b) return;
+    var cur = body ? parseFloat(body.style.getPropertyValue('--ehx-rp')) || 0 : 0, n = body ? body.children.length : 0;
     if (stg && shown(stg) && row && shown(body)) {
       var r = stg.getBoundingClientRect(), k = r.width ? r.height / r.width : 0, sb = b.parentElement, cs = getComputedStyle(sb);
       var m = /min\(100%,\s*([\d.]+)px\)/.exec(fig.getAttribute('style') || ''), own = Math.min(sb.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 12, m ? +m[1] : 600);
-      var want = Math.min(body.scrollHeight, Math.ceil(row.getBoundingClientRect().height * 5.5));
+      var want = Math.min(body.scrollHeight - 2 * cur * n, Math.ceil((row.getBoundingClientRect().height - 2 * cur) * 4.5));
       var over = k ? want - (limit() - body.getBoundingClientRect().top - (own * k - r.height)) : 0;
       if (over > 0.5) val = Math.max(240, Math.floor(own - over / k)) + 12 + 'px';   // 12: the board's padding at its sides
+      else if (!b.style.maxWidth) {
+        var inner = fill.firstElementChild, fs = getComputedStyle(fill);
+        var free = fill.clientHeight - parseFloat(fs.paddingTop) - parseFloat(fs.paddingBottom) - (inner ? inner.getBoundingClientRect().height : 0) + 2 * cur * n;
+        if (free > 1) rp = Math.min(RP_MAX, Math.floor(free / n) / 2);
+      }
     }
     if (b.style.maxWidth !== val) b.style.maxWidth = val;
+    if (body && cur !== rp) body.style.setProperty('--ehx-rp', rp + 'px');
   }
 
   function fitAll() {
@@ -221,7 +263,7 @@
     // shows at the full width first, nor a list with its first rows only; the rest a moment later
     new MutationObserver(function (ms) {
       var hit = false, add = false;
-      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(t.closest && t.closest('.ehx-headrow, .ehx-coal, .ehx-foot, .ehx-sb, .ehx-tog'))) { hit = true; if (ms[i].type === 'childList') add = true; } }
+      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(t.closest && t.closest('.ehx-headrow, .ehx-coal, .ehx-note, .ehx-foot, .ehx-sb, .ehx-tog'))) { hit = true; if (ms[i].type === 'childList') add = true; } }
       if (!hit) return;
       if (g.id === 'cmp') cmpSwitch();
       // a new row of parties (a live update): in its rows before it is painted
@@ -237,6 +279,28 @@
     setInterval(soon, 2500);
     fitAll();
   }
-  window.EH_FIT = { fit: fitAll };
+  window.EH_FIT = { fit: fitAll, need: need };
+  /* v3.11 · Results by ward: the room its map leaves (the map at its full size: as wide as its box, or as tall as the hub draws it). Leading
+     party and Turnout: the box's height less the drawing's at its full size (less than 0 where the room is short of it). Change since 2021:
+     the room under the note (the two maps keep their size where there is room, embed-fit.css). */
+  function wardsSpare() {
+    if (X.view === 'cmp') {
+      var c = $('.mf-wmap--res .mf-wm-cmp'), l = c && c.lastElementChild;
+      if (!l || !shown(c)) return 0;
+      return Math.max(0, c.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(c).paddingBottom) || 0) - l.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(l).marginBottom) || 0));
+    }
+    var box = $('.mf-wmap--res .mf-wm-box'), svg = box && box.querySelector('svg'), vb = svg && svg.viewBox && svg.viewBox.baseVal;
+    return box && shown(box) && vb && vb.width ? box.clientHeight - box.clientWidth * vb.height / vb.width : 0;
+  }
+  /* v3.7 · the frame's height the graphic needs, every party in it (library.js measures the code's height with it, in a frame taller than
+     that): the frame's height less the room the graphic leaves free in it (Council seats: less the room its rows were spread over too) */
+  function need() {
+    if (!fill) return 0;
+    fitAll();
+    var inner = fill.firstElementChild, fs = getComputedStyle(fill), body = g.id === 'seats' ? root.querySelector('.ehx-seats-b') : null;
+    var free = fill.clientHeight - parseFloat(fs.paddingTop) - parseFloat(fs.paddingBottom) - (inner ? inner.getBoundingClientRect().height : 0);
+    if (body) free += 2 * (parseFloat(body.style.getPropertyValue('--ehx-rp')) || 0) * body.children.length;
+    return Math.ceil(document.documentElement.clientHeight - Math.max(0, free) - (g.id === 'wards' ? wardsSpare() : 0));
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

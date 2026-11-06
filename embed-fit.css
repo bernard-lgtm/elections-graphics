@@ -17,6 +17,7 @@ html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward{display:flex;flex-direction:col
 html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward > *{width:100%;flex:none}
 html.ehx-fit #dm-eh .ehx-headrow{margin-bottom:16px}
 html.ehx-fit #dm-eh .ehx-foot{margin-top:14px;padding:10px 0 12px}
+html.ehx-fit #dm-eh .ehx-note{margin-top:14px}html.ehx-fit #dm-eh .ehx-note:not([hidden]) + .ehx-foot{margin-top:10px}
 @media (max-width:480px){html.ehx-fit #dm-eh .ehx-head .t{font-size:27px}html.ehx-fit #dm-eh .ehx-foot{font-size:10.5px}}
 /* a list longer than its room: every row, in a box that scrolls (embed-fit.js sets its height), under a bar of its own: a hairline track
    and a thumb to drag, black under the pointer; the rows fade out at an edge with more beyond it */
@@ -127,6 +128,13 @@ html.ehx-fit[data-embed="wards"] #dm-eh .mf-wmap:not([data-view="cmp"]) .mf-wm-g
 html.ehx-fit[data-embed="wards"] #dm-eh .mf-ward > .mf-wmap--res{flex:1 1 auto}
 html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-grid:not(.has-side) > .mf-wm-side,html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-cmp{flex:none}
 html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-grid.has-side{flex:none}
+/* v3.11 · Results by ward, Change since 2021: the two years' maps at their full size where the room allows, drawn smaller into a shorter room
+   (never cut off). Both boxes in one row of the grid (subgrid), so the two years keep one scale; room left over stays under the note */
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wmap[data-view="cmp"] .mf-wm-cmp{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-cmp > .mf-wc-grid{flex:0 1 auto;min-height:0;grid-template-rows:auto minmax(0,1fr) auto;align-items:stretch}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wc-grid > .mf-wc-map{display:grid;grid-row:1 / span 3;grid-template-rows:subgrid;min-height:0}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wc-box:not(.is-wait){height:auto!important;min-height:0}
+html.ehx-fit[data-embed="wards"] #dm-eh .mf-wm-cmp > .mf-wc-note{flex:none}
 html.ehx-fit[data-embed="ward"] #dm-eh .mf-wardpanel .wp-cands > .wp-lbl,html.ehx-fit[data-embed="wardpick"] #dm-eh .mf-wardpanel .wp-cands > .wp-lbl{margin-top:16px}
 /* the Coalition builder: the half circle and its parties in the middle of the room under the line (safe: at the top if they ever need more
    room than there is) */

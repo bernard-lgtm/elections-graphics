@@ -1,5 +1,6 @@
 /* embed.js — runs after the hub, for graphic.html?embed=…: writes the title over the graphic with the count's box beside it (the hub's:
-   Counting in red, Count complete in charcoal, Results declared in green) and the credit at the foot (the link to the hub, the masthead), keeps
+   Counting in red, Count complete in charcoal, Results declared in green) and the credit at the foot (the link to the hub, the masthead; v3.8:
+   on the graphics of the full count, the note on the ballots over it), keeps
    them up to date as the hub reads the feed, tells the page around it how tall it is (postMessage { ehx: 'height', h }), and gives the
    library and export.js window.EH_EMBED (title, ready, state). In a graphic of South Africa or a province, a council clicked opens its
    file on the Elections Hub in a new tab. */
@@ -12,7 +13,7 @@
   var HUB_TAB = { results: 'all', turnout: 'turnout', 'hung-councils': 'hung', 'change-since-2021': 'cmp' };
   var MO = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  var root, hrow, head, kEl, tEl, stat, asatEl = null, foot, coal = null, coalT, coalB, booted = false;
+  var root, hrow, head, kEl, tEl, tagEl, stat, asatEl = null, foot, noteEl = null, coal = null, coalT, coalB, booted = false;
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function R$() { return window.EH_RES || null; }
@@ -24,6 +25,8 @@
     var v = viewOf(), k = v ? v[2] : g.kicker || g.name, t;
     if (nat) { t = PV[areaNow()] || 'South Africa'; if (g.id === 'cmp' && st.view === 'councils' && !areaNow()) k = 'Change since 2021: provinces'; }
     else { var m = muniOf(st.muni); t = m ? shortName(st.muni) : st.muni; if (g.ward && st.ward) t += '\u00a0\u00b7 Ward ' + st.ward; }
+    // v3.7 · the Coalition builder's title is the hub's own question (its button in the council's box), with no kicker over it
+    if (g.id === 'coalition') return { kicker: '', title: 'Who can build a coalition in ' + t + '?' };
     return { kicker: k, title: t };
   }
   function hubAnchor() {
@@ -32,10 +35,10 @@
     try { return nat ? A.tab(HUB_TAB[g.tab] || 'all', areaNow()) : A.council(st.muni, g.ward ? { ward: st.ward } : g.id === 'coalition' ? { coal: true } : g.id === 'wards' ? { wards: true } : {}); } catch (e) { return ''; }
   }
   // the results page (config.js hubUrl), at the graphic's own place; once the graphic shows Results declared, the results declared page
-  // (declaredUrl), if set
+  // (declaredUrl), if set (not for the 2021 figures)
   function clean(u) { return String(u || '').replace(/#.*$/, ''); }
   var HUB = clean(C.hubUrl || 'https://www.dailymaverick.co.za/local-elections-results-2026/'), HUB_D = clean(C.declaredUrl);
-  function hubBase() { if (!HUB_D) return HUB; var s = state(); return s.k === 'final' ? HUB_D : HUB; }
+  function hubBase() { if (!HUB_D) return HUB; var s = state(); return s.k === 'final' && !s.past ? HUB_D : HUB; }
   function hubLink(a) { return hubBase() + (a ? '#' + a : ''); }
   function hubShort() { return hubBase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/+$/, ''); }
   function dayNo(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').trim()); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; }
@@ -65,8 +68,8 @@
     var R = R$(), S = R && R.S;
     if (!S || S.state === 'loading') return { k: 'loading' };
     if (S.state === 'error') return { k: 'error' };
-    var P = placeR();
-    if (S.phase === 'final') return { k: 'final', R: P };
+    var P = placeR(), past = !S.sample && String(S.src) !== String(($('dm-eh') && $('dm-eh').getAttribute('data-year')) || '2026');
+    if (S.phase === 'final' || past) return { k: 'final', R: P, past: past };
     var done = S.phase === 'provisional' || (P && P.vdCount > 0 && (P.complete || P.vdCaptured >= P.vdCount));
     if (done) return { k: 'complete', R: P };
     if (P && P.vdCaptured > 0) return { k: 'counting', R: P, pct: R.declared ? R.declared(P) : P.vdCaptured / P.vdCount * 100 };
@@ -90,11 +93,11 @@
     if (s.k === 'loading') return doneBox('is-idle', 'Loading results');
     if (s.k === 'error') return doneBox('is-idle', 'Results unavailable', 'The graphic tries again by itself');
     if (s.k === 'final') {
-      var dd = dayNo(($('dm-eh') && $('dm-eh').getAttribute('data-declared')) || '');
+      var dd = s.past ? dayNo('2021-11-04') : dayNo(($('dm-eh') && $('dm-eh').getAttribute('data-declared')) || '');
       return doneBox('is-done', 'Results declared', dd != null ? dayTxt(dd) : 'By the Electoral Commission', true);
     }
     if (s.k === 'complete') return doneBox('is-prov', 'Count complete', 'Provisional until declared', true);
-    if (s.k === 'waiting' && polling()) return doneBox('is-idle', 'No votes counted yet', 'Results from the night of ' + dayShort(votingDay()));
+    if (s.k === 'waiting' && !R.S.sample && polling()) return doneBox('is-idle', 'No votes counted yet', 'Results from the night of ' + dayShort(votingDay()));
     var html = P && P.vdCount > 0 && R.render && R.render.declBox ? R.render.declBox(P) : '';
     return html || '<div class="mf-decl is-live"><div class="mf-decl-row"><span class="st"><i aria-hidden="true"></i>Counting</span><b>' + (s.k === 'counting' && R.decPct ? esc(R.decPct(P)) : '0%') + '</b></div>' +
       '<span class="trk"><i style="width:' + (s.k === 'counting' ? Math.min(100, s.pct || 0) : 0).toFixed(1) + '%"></i></span>' +
@@ -116,17 +119,27 @@
       statHtml = html;
     }
     if (h.getAttribute('data-k') !== s.k) { stat.setAttribute('data-k', s.k); h.setAttribute('data-k', s.k); }
+    var tag = s.past ? '2021 figures' : '';
+    if (tagEl.textContent !== tag) tagEl.textContent = tag;
+    if (tagEl.hidden !== !tag) tagEl.hidden = !tag;
+    paintK();
   }
-  /* ---- still graphics (&mode=still): the time of the figures right under the count's box, from the feed's last reading; every list's
-     Show all pressed, so every row is in the image ---- */
+  // the kicker's line, with the 2021 tag: none where both are empty (the Coalition builder)
+  function paintK() { var k = kEl.parentNode, off = !kEl.textContent && tagEl.hidden; if (k.hidden !== off) k.hidden = off; }
+  /* ---- still graphics (&mode=still): the time of the figures over the count's box (v3.9: Figures as at, then the time and the day in bold), from
+     the feed's last reading (the sample and the 2021 results say what they are instead); every list's Show all pressed, so every row is in the image ---- */
   function asAt() {
     var R = R$(), S = R && R.S, s = state(), t = (S && S.updated) || Date.now();
-    if (s.k === 'loading' || s.k === 'error') return { t: Date.now(), text: '' };
-    return { t: t, text: 'Figures as at ' + stamp(t).replace(' on ', ' SAST on ') };
+    if (s.k === 'loading' || s.k === 'error') return { t: Date.now(), text: '', tag: '' };
+    if (s.past) return { t: t, text: 'Final results of the 2021 local elections', tag: '2021' };
+    if (S && S.sample) return { t: t, text: 'Sample figures for testing, not election results', tag: 'sample' };
+    var on = stamp(t).split(' on ');
+    return { t: t, text: 'Figures as at ' + on[0] + ' SAST on ' + on[1], tag: '', time: on[0] + ' SAST', day: on[1] };
   }
+  var asatHtml = '';
   function paintStamp() {
-    var t = asAt().text;
-    if (asatEl && asatEl.textContent !== t) asatEl.textContent = t;
+    var a = asAt(), html = !a.text ? '' : a.time ? '<span class="l">Figures as at</span><span class="v"><span>' + esc(a.time) + ',</span> <span>' + esc(a.day) + '</span></span>' : '<span class="v is-note">' + esc(a.text) + '</span>';
+    if (asatEl && html !== asatHtml) { asatEl.innerHTML = html; asatHtml = html; }
   }
   function openAll() { [].forEach.call(root.querySelectorAll('.mf-res-more[aria-expanded="false"]'), function (b) { b.click(); }); }
   /* ---- v3.4 · a still graphic's lists, kept short. Votes by party: every party with seats on the council, the rest together as Others
@@ -177,8 +190,13 @@
   }
   /* ---- Council seats: under the box, every party with seats, largest first, with its votes and its seats (the seats the half circle shows:
      the Commission's, or provisional seats from the full count). Beside the results box, not in it, so the hub's live updates leave it (and
-     where it is scrolled to) in place. In the embed its rows scroll in a box of their own (embed-fit.js); in a still graphic every row shows. ---- */
-  var seatsHtml = null;
+     where it is scrolled to) in place. The embed code's height is measured for the council (library.js), so every row shows; only where the
+     frame is short of them (a code copied before the seats were in) do they scroll in a box of their own (embed-fit.js).
+     v3.7 · each party's votes as a bar (the largest party's the column's width), split by ballot as in the hub's open row in Votes by party:
+     ward votes solid, PR hatched, a local council's district ballot dotted, the figures under it and the key in the head. ---- */
+  var BAL = [['w', 'Ward', 'wardVotes'], ['l', 'PR', 'prVotes'], ['d', 'District', 'dcVotes']];
+  function balOf(p) { var o = []; BAL.forEach(function (b) { if (p[b[2]] > 0) o.push({ k: b[0], lbl: b[1], v: p[b[2]] }); }); return o; }
+  var seatsHtml = null, seatsKey = null;
   function paintSeats() {
     var R = R$(), x = R && R.IX && R.IX[st.muni], P = x && x.e ? R.norm(x.e) : null, res = $('mf-res'), el = root.querySelector('.ehx-seats');
     var v = P && R.seatsView ? R.seatsView(P) : null, Q = v && v.R && (v.kind === 'final' || v.kind === 'provisional') ? v.R : null;
@@ -186,23 +204,50 @@
     if (!res || !list.length) { if (el) el.remove(); seatsHtml = null; return; }
     if (!el) {
       el = document.createElement('div'); el.className = 'ehx-seats'; el.setAttribute('role', 'table'); el.setAttribute('aria-label', 'Votes and seats by party');
-      el.innerHTML = '<div class="ehx-seats-h" role="rowgroup"><div class="ehx-seats-r" role="row"><span role="columnheader">Party</span><span class="n" role="columnheader">Votes</span><span class="n" role="columnheader">Seats</span></div></div><div class="ehx-seats-b" role="rowgroup"></div>';
-      seatsHtml = null;
+      el.innerHTML = '<div class="ehx-seats-h" role="rowgroup"><div class="ehx-seats-r" role="row"><span class="p" role="columnheader">Party</span><span class="k" role="columnheader"></span><span class="n" role="columnheader">Votes</span><span class="n" role="columnheader">Seats</span></div></div><div class="ehx-seats-b" role="rowgroup"></div>';
+      seatsHtml = seatsKey = null;
     }
     if (el.previousElementSibling !== res) res.parentNode.insertBefore(el, res.nextSibling);
+    var mx = Math.max.apply(null, list.map(function (p) { return p.votes || 0; })) || 1, kinds = {};
     var html = list.map(function (p) {
+      var bs = balOf(p), c = '--c:' + esc(p.col), f = Math.max(0, Math.min(1, (p.votes || 0) / mx));
+      bs.forEach(function (b) { kinds[b.k] = 1; });
+      var bar = '<span class="bar" style="width:' + (f * 100).toFixed(2) + '%;' + c + '">' + (bs.length ? bs : [{ k: 'a', v: 1 }]).map(function (b) { return '<i class="' + b.k + '" style="flex-grow:' + b.v + '"></i>'; }).join('') + '</span>';
+      var sub = bs.length ? '<span class="sp">' + bs.map(function (b) { return '<span>' + b.lbl + ' ' + int(b.v) + '</span>'; }).join('') + '</span>' : '';
       return '<div class="ehx-seats-r" role="row"><span class="p" role="cell"' + (p.name && p.name !== p.label ? ' title="' + esc(p.name) + '"' : '') + '><i style="background:' + esc(p.col) + '"></i><b>' + esc(p.label) + '</b></span>' +
+        '<span class="b" role="cell">' + bar + sub + '</span>' +
         '<span class="n v" role="cell">' + int(p.votes || 0) + '</span><span class="n s" role="cell">' + p.seats + '</span></div>';
     }).join('');
+    var key = BAL.filter(function (b) { return kinds[b[0]]; }).map(function (b) { return '<span><i class="' + b[0] + '"></i>' + b[1] + '</span>'; }).join('');
+    if (key !== seatsKey) { el.querySelector('.ehx-seats-h .k').innerHTML = key; seatsKey = key; }
     if (html !== seatsHtml) { el.lastChild.innerHTML = html; seatsHtml = html; }
+  }
+  /* ---- v3.8 · the note on the ballots, over the credit, on the graphics of the full count (graphics.js: ballots). A party's votes and share
+     there are its votes on every ballot, the feed's votes: ward and PR, and in a local council district too. A metro has two ballots and no
+     district votes in its figures, so its note names the two. No note on turnout, the hung councils, the coalition builder or a ward's
+     result (its ward ballot alone). ---- */
+  var NOTE_ALL = 'Results are calculated from all three ballots: Ward, Proportional Representation (PR), and District Council. Seats are allocated from the Ward and Proportional Representation ballots only.';
+  var NOTE_METRO = 'Results are calculated from both ballots: Ward and Proportional Representation (PR).';
+  function ballotNote() {
+    var b = g.ballots, m;
+    if (!b || (b !== true && !(b.indexOf && b.indexOf(st.view) >= 0))) return '';
+    if (nat) return NOTE_ALL;
+    m = muniOf(st.muni);
+    return !m ? '' : m.t === 'Metropolitan' ? NOTE_METRO : NOTE_ALL;
+  }
+  function paintBallots() {
+    if (!noteEl) return;
+    var t = ballotNote();
+    if (noteEl.textContent !== t) noteEl.textContent = t;
+    if (noteEl.hidden !== !t) noteEl.hidden = !t;
   }
   var headKey = '';
   function paintHead() {
     var t = title(), key = t.kicker + '|' + t.title;
     if (key !== headKey) {
       headKey = key;
-      kEl.textContent = t.kicker; tEl.textContent = t.title;
-      document.title = t.kicker + ': ' + t.title.replace(/\u00a0/g, ' ') + ' \u00b7 Daily Maverick';
+      kEl.textContent = t.kicker; tEl.textContent = t.title; paintK();
+      document.title = (t.kicker ? t.kicker + ': ' : '') + t.title.replace(/\u00a0/g, ' ') + ' \u00b7 Daily Maverick';
     }
     var a = foot.querySelector('a.more'), href = hubLink(hubAnchor()), u = foot.querySelector('.url'), us = hubShort();
     if (a.getAttribute('href') !== href) a.setAttribute('href', href);
@@ -400,18 +445,20 @@
     if (!root || booted) return;
     booted = true;
     // the head: the title on the left, the count's box on the right
-    head = document.createElement('div'); head.className = 'ehx-head'; head.innerHTML = '<span class="k"><span class="kt"></span></span><h1 class="t"></h1>';
-    kEl = head.querySelector('.kt'); tEl = head.querySelector('.t');
+    head = document.createElement('div'); head.className = 'ehx-head'; head.innerHTML = '<span class="k"><span class="kt"></span><span class="ehx-tag" hidden></span></span><h1 class="t"></h1>';
+    kEl = head.querySelector('.kt'); tEl = head.querySelector('.t'); tagEl = head.querySelector('.ehx-tag');
     stat = document.createElement('div'); stat.className = 'ehx-status'; stat.setAttribute('role', 'status'); stat.setAttribute('data-k', 'loading');
     hrow = document.createElement('div'); hrow.className = 'ehx-headrow'; hrow.appendChild(head);
-    // a still graphic: the time of the figures right under the count's box, in one column with it
-    if (X.still) { var side = document.createElement('div'); side.className = 'ehx-side'; side.appendChild(stat); asatEl = document.createElement('p'); asatEl.className = 'ehx-asat'; side.appendChild(asatEl); hrow.appendChild(side); }
+    // a still graphic: the time of the figures over the count's box, in one column with it (v3.9; it was under it)
+    if (X.still) { var side = document.createElement('div'); side.className = 'ehx-side'; asatEl = document.createElement('p'); asatEl.className = 'ehx-asat'; side.appendChild(asatEl); side.appendChild(stat); hrow.appendChild(side); }
     else hrow.appendChild(stat);
     foot = document.createElement('div'); foot.className = 'ehx-foot';
     foot.innerHTML = '<span class="lnk">' + (X.still ? '<span class="src">Source: Electoral Commission of South Africa \u00b7 <span class="url">' + esc(hubShort()) + '</span></span>' : '') +
       '<a class="more" href="' + esc(hubLink('')) + '" target="_blank" rel="noopener">All results on the Elections Hub</a>' + (X.still ? '' : '<span class="url">' + esc(hubShort()) + '</span>') + '</span>' +
       '<a class="logo" href="https://www.dailymaverick.co.za" target="_blank" rel="noopener" aria-label="Daily Maverick"><img src="assets/DM_Masthead_2026.svg" alt="Daily Maverick" width="222" height="28"></a>';
+    noteEl = document.createElement('p'); noteEl.className = 'ehx-note'; noteEl.hidden = true;
     root.insertBefore(hrow, root.firstChild);
+    root.appendChild(noteEl);
     root.appendChild(foot);
     if (g.id === 'coalition') {
       coal = document.createElement('div'); coal.className = 'ehx-coal'; coal.hidden = true;
@@ -441,11 +488,11 @@
     }
     var raf = 0;
     function later() { lastMut = Date.now(); if (raf) return; raf = setTimeout(function () { raf = 0; tickAll(); }, 40); }
-    function tickAll() { if (g.id === 'cmp') markCmp(); if (g.id === 'wards') pinWards(); if (g.locate) syncPick(); fetchWard(); paintHead(); paintStatus(); paintCoal(); if (g.ward && !X.still) paintShare(); if (g.id === 'seats') paintSeats(); if (X.still) { openAll(); cutLists(); paintStamp(); } postH(); }
+    function tickAll() { if (g.id === 'cmp') markCmp(); if (g.id === 'wards') pinWards(); if (g.locate) syncPick(); fetchWard(); paintHead(); paintBallots(); paintStatus(); paintCoal(); if (g.ward && !X.still) paintShare(); if (g.id === 'seats') paintSeats(); if (X.still) { openAll(); cutLists(); paintStamp(); } postH(); }
     window.__ehxLater = later;
     // Change since 2021: the hub writes the tab afresh, its parts hidden until marked (embed.css): marked at once, before the page is painted
     new MutationObserver(function (ms) {
-      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(hrow.contains(t) || foot.contains(t) || (coal && coal.contains(t)) || (t.closest && t.closest('.ehx-seats')))) { if (g.id === 'cmp') markCmp(); later(); return; } }
+      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(hrow.contains(t) || foot.contains(t) || noteEl.contains(t) || (coal && coal.contains(t)) || (t.closest && t.closest('.ehx-seats')))) { if (g.id === 'cmp') markCmp(); later(); return; } }
     }).observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'data-phase'] });
     var R = R$();
     if (R) { if (R.on) R.on(later); if (R.onPhase) R.onPhase(later); if (R.ready) R.ready().then(later, later); }

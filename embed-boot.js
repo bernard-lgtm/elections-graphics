@@ -1,7 +1,8 @@
 /* embed-boot.js — runs in the head of graphic.html, before the hub. graphic.html?embed=<graphic> shows one graphic of the Elections Hub
    (the list is in graphics.js) for an area (&area=GP; none for South Africa) or a council (&muni=<key>, &ward=<n>), in a view (&view=).
    It turns the address into the hub's own anchor (#turnout-gp, #jhb-ward-12, #jhb-coalition), so the hub opens straight on the
-   graphic; and stops the embed from ever scrolling itself or the article around it. */
+   graphic; picks the hub build (the light live build, or the preview build for &data=sample|2021); and stops the embed from ever
+   scrolling itself or the article around it. */
 window.__errs = []; window.addEventListener('error', function (e) { window.__errs.push((e.message || '') + ' @' + (e.filename || '').split('/').pop() + ':' + e.lineno); }); window.addEventListener('unhandledrejection', function (e) { window.__errs.push('rej ' + (e.reason && e.reason.stack || e.reason)); });
 (function () {
   'use strict';
@@ -10,7 +11,8 @@ window.__errs = []; window.addEventListener('error', function (e) { window.__err
   var u = new URL(location.href), q = u.searchParams, id = String(q.get('embed') || '').toLowerCase();
   if (id === 'cmp' && !q.get('view')) q.set('view', 'party');
   var g = GR.filter(function (x) { return x.id === id; })[0];
-  var X = window.EHX = { g: g || null, id: id };
+  var data = String(q.get('data') || '').toLowerCase();
+  var X = window.EHX = { g: g || null, id: id, data: data, build: data === 'sample' || data === '2021' ? 'preview' : 'live' };
   if (!g) { h.setAttribute('data-embed', 'none'); return; }
   var area = String(q.get('area') || '').toUpperCase();
   if (!PV[area]) area = '';
@@ -34,18 +36,20 @@ window.__errs = []; window.addEventListener('error', function (e) { window.__err
   // &fit=0 for the old way, the card as tall as its content
   X.h = (g.hv && g.hv[view]) || g.h || 760;
   // &mode=still (the library's still graphics, the PNG images): no fixed height, the card as tall as everything in it, nothing that
-  // needs a pointer, the time of the figures under the count's box (embed.css, embed.js)
+  // needs a pointer, the time of the figures over the count's box (embed.css, embed.js)
   X.still = q.get('mode') === 'still';
   X.fit = !X.still && q.get('fit') !== '0';
   if (X.still) h.classList.add('ehx-still');
   if (X.fit) { h.classList.add('ehx-fit'); h.style.setProperty('--ehx-h', X.h + 'px'); }
+  // the preview figures, as the hub's preview bar sets them: the sample count on 5 November (Counting at 60% unless &at= says otherwise)
+  if (data === 'sample') { if (!q.get('now')) q.set('now', '2026-11-05'); if (!q.get('at')) q.set('at', '60'); }
   // the hub opens on its anchor; its older links (?muni=, ?tab=) are taken out so they can't win over it
   u.hash = g.group === 'area' ? g.tab + (area ? '-' + area.toLowerCase() : '') : muni.toLowerCase() + (g.ward ? '-ward-' + ward : id === 'coalition' ? '-coalition' : '');
   ['tab'].forEach(function (k) { q.delete(k); });
   try { history.replaceState(null, '', u.toString()); } catch (e) {}
   /* The hub rewrites the address as the reader moves (its anchors) and takes ?muni= and ?ward= out of it, which would leave a council's
      embed without its council on a reload, back/forward or a copied address. Whatever the hub writes, the embed's own parameters stay. */
-  var KEEP = ['embed', 'area', 'muni', 'ward', 'view', 'still', 'mode', 'raf', 'clock'], OWN = {};
+  var KEEP = ['embed', 'area', 'muni', 'ward', 'view', 'data', 'at', 'dec', 'decl', 'now', 'still', 'mode', 'raf', 'clock'], OWN = {};
   KEEP.forEach(function (k) { if (q.has(k)) OWN[k] = q.get(k); });
   if (g.group === 'muni') { OWN.muni = muni; if (g.ward) OWN.ward = ward; else delete OWN.ward; }
   function keep(url) {

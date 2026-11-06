@@ -6,7 +6,7 @@ html.ehx-on #dm-eh{background:#fff;border:1px solid #D4D4D4;border-radius:10px;p
 /* opened on its own (the link in a browser tab): the card on the library's grey */
 html.ehx-top body{background:#F2F2F2;padding:24px 16px 40px}
 html.ehx-top #dm-eh{max-width:1100px;margin:0 auto}
-html.ehx-on #dm-eh > :not(.eh-hero):not(.eh-tabs-sec):not(.mf-modal):not(.ehx-headrow):not(.ehx-coal):not(.ehx-foot){display:none!important}
+html.ehx-on #dm-eh > :not(.eh-hero):not(.eh-tabs-sec):not(.mf-modal):not(.ehx-headrow):not(.ehx-coal):not(.ehx-note):not(.ehx-foot){display:none!important}
 /* a map comes in once the hub has drawn it and its first redrawing is over (embed-boot.js: html.ehx-hold; embed.js adds html.ehx-in) */
 html.ehx-hold #dm-eh > .eh-hero,html.ehx-hold #dm-eh > .eh-tabs-sec{transition:opacity .25s ease}
 html.ehx-hold:not(.ehx-in) #dm-eh > .eh-hero,html.ehx-hold:not(.ehx-in) #dm-eh > .eh-tabs-sec{opacity:0}
@@ -19,6 +19,12 @@ html.ehx-on #dm-eh .ehx-head{min-width:0;margin:0}
 html.ehx-on #dm-eh .ehx-head .k{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:0 0 5px;font:700 13px/1.2 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:#414343}
 html.ehx-on #dm-eh .ehx-head .t{display:block;margin:0;font:700 34px/1.12 var(--font-display);letter-spacing:.005em;color:#171717;text-wrap:balance}
 @media (max-width:480px){html.ehx-on #dm-eh .ehx-head .t{font-size:28px}}
+html.ehx-on #dm-eh .ehx-tag{display:inline-block;padding:2px 6px 1px;border-radius:3px;background:#171717;color:#fff;font:700 10px/1.4 var(--font-ui);letter-spacing:.08em;text-transform:uppercase}
+html.ehx-on #dm-eh .ehx-tag[hidden]{display:none}
+html.ehx-on #dm-eh .ehx-head .k[hidden]{display:none}
+/* v3.7 · the Coalition builder: its title is the hub's question, Who can build a coalition in <council>?, in DM Custom with no kicker */
+html.ehx-on[data-embed="coalition"] #dm-eh .ehx-head .t{font-size:29px;line-height:1.1}
+@media (max-width:480px){html.ehx-on[data-embed="coalition"] #dm-eh .ehx-head .t{font-size:21px;line-height:1.12}}
 
 /* where the count stands, in the hub's count box (post-elections v30: its masthead's three states, its results tabs' box). Counting in red,
    with the share of voting districts counted, its bar and the voting districts; Count complete in charcoal, the results provisional until
@@ -59,6 +65,11 @@ html.ehx-on #dm-eh .ehx-foot .logo img{display:block;height:28px;width:auto}
 html.ehx-on #dm-eh .ehx-foot .url{display:none}
 html.is-snap #dm-eh .ehx-foot a.more{display:none}
 html.is-snap #dm-eh .ehx-foot .url{display:inline}
+/* v3.8 · the note on the ballots, over the credit, on the graphics of the full count (embed.js; a metro's names its two ballots) */
+html.ehx-on #dm-eh .ehx-note{margin:16px 0 0;padding:0;font:400 11.5px/1.45 var(--font-ui);color:#5e574e;text-wrap:pretty}
+html.ehx-on #dm-eh .ehx-note[hidden]{display:none}
+html.ehx-on #dm-eh .ehx-note:not([hidden]) + .ehx-foot{margin-top:12px}
+@media (max-width:480px){html.ehx-on #dm-eh .ehx-note{font-size:10.5px}}
 
 /* ---- South Africa and the provinces: one tab's panel, without the tabs and the area dropdown over them ---- */
 html.ehx-nat #dm-eh .eh-hero{display:none!important}
@@ -149,6 +160,12 @@ html[data-embed="coalition"] #dm-eh .mf-coal-row[data-ehx-bal]{row-gap:0}
 html[data-embed="coalition"] #dm-eh .mf-coal-row > .ehx-br{flex:0 0 100%;height:var(--ehx-rg);margin:0;padding:0}
 /* v3.2 · the parties' buttons as large as the room under the half circle allows (embed-fit.js: --ehx-kc, 1.8 times the hub's at most) */
 html[data-embed="coalition"] #dm-eh .mf-coal-row .mf-cp{zoom:var(--ehx-kc,1)}
+/* v3.7 · the article column: the parties beside the half circle, in as many columns as the room's height needs (embed-fit.js: .ehx-side on
+   the seat box where that draws the half circle larger, --ehx-cc), under the Majority flag's room as the half circle is */
+html[data-embed="coalition"] #dm-eh .mf-seat-box.ehx-side{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:28px}
+html[data-embed="coalition"] #dm-eh .mf-seat-box.ehx-side > .mf-res-board{grid-column:1;grid-row:1;min-width:0;width:auto;margin:0}
+html[data-embed="coalition"] #dm-eh .mf-seat-box.ehx-side > .mf-coal-row{grid-column:2;grid-row:1;display:grid!important;grid-template-columns:repeat(var(--ehx-cc,1),auto);align-content:center;justify-content:center;justify-items:center;gap:calc(12px * var(--ehx-kc,1)) calc(14px * var(--ehx-kc,1));width:auto;margin:0;padding:44px 0 0}
+html[data-embed="coalition"] #dm-eh .mf-seat-box.ehx-side > .mf-coal-row > .ehx-br{display:none}
 
 /* ---- no votes counted yet, or no answer from the feed: the count's box says so, the hub's own note under it would repeat it ---- */
 html.ehx-on[data-k="waiting"] #dm-eh .mf-res-msg,html.ehx-on[data-k="error"] #dm-eh .mf-res-msg,html.ehx-on[data-k="waiting"] #dm-eh #res-stand > .res-sub{display:none!important}
@@ -161,7 +178,7 @@ html.is-snap #dm-eh .res-zoom,html.is-snap #dm-eh .eh-hung-go,html.is-snap #dm-e
 html.is-snap #dm-eh .res-tip,html.is-snap #dm-eh .res-refresh,html.is-snap #dm-eh .mf-res-more{display:none!important}
 
 /* ---- Still graphics (&mode=still, the library's PNG images): the card as tall as everything in it, nothing that needs a pointer (no
-   tooltips, no ? buttons, no rows that open), every party in every list; the time of the figures under the count's box, their source in the credit ---- */
+   tooltips, no ? buttons, no rows that open), every party in every list; the time of the figures over the count's box, their source in the credit ---- */
 html.ehx-still #dm-eh{pointer-events:none}
 html.ehx-still #dm-eh .res-tip,html.ehx-still #dm-eh .res-refresh,html.ehx-still #dm-eh .mf-res-more,html.ehx-still #dm-eh .mf-wm-tip,html.ehx-still #dm-eh .cs-info,html.ehx-still #dm-eh .cs-info-pop{display:none!important}
 /* v3.4 · party support as on the hub: the five largest parties, then Others (the rest together), shut */
@@ -170,10 +187,25 @@ html.ehx-still #dm-eh .res-stand .res-ps .oth-chev{display:none}
 html.ehx-still #dm-eh .ehx-foot{align-items:flex-end}
 html.ehx-still #dm-eh .ehx-foot .lnk{display:flex;flex-direction:column;gap:3px}
 html.ehx-still #dm-eh .ehx-foot a.more{display:none}
-/* the time of the figures right under the count's box, centred on it */
-html.ehx-still #dm-eh .ehx-side{min-width:0;display:flex;flex-direction:column;gap:8px}
-html.ehx-still #dm-eh .ehx-asat{margin:0;font:600 12px/1.35 var(--font-ui);color:#171717;text-align:center;text-wrap:balance}
+/* v3.9 · the time of the figures (or what they are: the sample, 2021) over the count's box and larger: Figures as at in small capitals, then
+   the time and the day in bold. The box a little smaller under it (64px high, its figures smaller), as wide as the time and 220px at least, the
+   two centred on each other at the card's right edge. Phones: the half of the head the box had, the time on two lines */
+html.ehx-still #dm-eh .ehx-side{min-width:0;display:flex;flex-direction:column;gap:9px}
+html.ehx-still #dm-eh .ehx-asat{margin:0;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;color:#171717}
 html.ehx-still #dm-eh .ehx-asat:empty{display:none}
+html.ehx-still #dm-eh .ehx-asat .l{font:700 11px/1.2 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:#414343}
+html.ehx-still #dm-eh .ehx-asat .v{font:700 17px/1.25 var(--font-ui);letter-spacing:-.005em;font-variant-numeric:tabular-nums;text-wrap:balance}
+html.ehx-still #dm-eh .ehx-asat .v > span{white-space:nowrap}
+html.ehx-still #dm-eh .ehx-asat .v.is-note{font-size:14px;line-height:1.3}
+@media (min-width:481px){
+html.ehx-still #dm-eh .ehx-headrow{grid-template-columns:minmax(0,1fr) fit-content(264px)}
+html.ehx-still #dm-eh .ehx-status{min-width:220px}
+html.ehx-still #dm-eh .ehx-status > .mf-decl{min-height:64px;padding:8px 14px;gap:6px}
+html.ehx-still #dm-eh .ehx-status > .mf-decl b{font-size:18px}
+html.ehx-still #dm-eh .ehx-status > .mf-decl .sub{font-size:11px}
+html.ehx-still #dm-eh .ehx-status > .ehx-done{gap:4px;padding:8px 11px}
+}
+@media (max-width:480px){html.ehx-still #dm-eh .ehx-side{gap:8px}html.ehx-still #dm-eh .ehx-asat .l{font-size:10px}html.ehx-still #dm-eh .ehx-asat .v{font-size:14px}html.ehx-still #dm-eh .ehx-asat .v.is-note{font-size:12px}}
 html.ehx-still #dm-eh .ehx-foot .url{display:inline}
 /* ---- v3.4 · still graphics, shorter and never cut off ---- */
 /* no list scrolls sideways in an image; the arrows that open a council (Results by council, Change since 2021: councils) do nothing on paper */
@@ -224,27 +256,60 @@ html.ehx-still #dm-eh .cmp-maps > .cmp-map > .res-map-head{margin-top:2px!import
 }
 /* ---- Council seats: the box with its status tag (Provisional, Declared) and the council's half circle, none of the coalition builder (Who
    can build a coalition in <council>?, the Hung council banner); under it every party with seats, its votes and its seats (embed.js), as
-   wide as the half circle at its widest. In the embed the rows scroll under their headings (embed-fit.js); in a still graphic every row shows ---- */
+   wide as the half circle at its widest. The embed code is as tall as they need (library.js, v3.7); in a frame short of them they scroll under
+   their headings (embed-fit.js); in a still graphic every row shows ---- */
 html[data-embed="seats"] #dm-eh .mf-cb-side,html[data-embed="seats"] #dm-eh .eh-dl,html[data-embed="seats"] #dm-eh .mf-coal-row{display:none!important}
 html[data-embed="seats"] #dm-eh .eh-dl + .mf-seat-box{margin-top:0}
 /* the hub keeps room over a hung council's half circle on a phone for the Majority flag of a coalition; there is no coalition here */
 html[data-embed="seats"] #dm-eh .mf-seat-box .mf-res-board.can-coal .ehh-stage{margin-top:0!important}
-html[data-embed="seats"] #dm-eh .ehx-seats{max-width:600px;margin:16px auto 0;text-align:left;font-family:Geist,"Helvetica Neue",Arial,sans-serif;font-size:14.5px;line-height:1.3;color:#171717;font-variant-numeric:tabular-nums}
-html[data-embed="seats"] #dm-eh .ehx-seats-r{display:grid;grid-template-columns:minmax(0,1fr) 100px 56px;column-gap:12px;align-items:center}
-html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r{padding:0 8px 9px;border-bottom:3px solid #181818;font-family:Archivo,"Helvetica Neue",Arial,sans-serif;font-stretch:87.5%;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5e574e;white-space:nowrap}
-html[data-embed="seats"] #dm-eh .ehx-seats-b .ehx-seats-r{padding:9px 8px;border-bottom:1px solid var(--dm-grey-1,#e3e3e3)}
+html[data-embed="seats"] #dm-eh .ehx-seats{--sx:154px;max-width:640px;margin:16px auto 0;text-align:left;font-family:Geist,"Helvetica Neue",Arial,sans-serif;font-size:14.5px;line-height:1.3;color:#171717;font-variant-numeric:tabular-nums}
+/* v3.7 · four columns: the party, its votes as a bar split by ballot with the figures under it, its votes, its seats. The party, the votes
+   and the seats stand on the bar's line; the figures run on under the votes and the seats where they need the room (--sx: those columns and
+   their gaps), so a row is two lines at every width and the graphic about as tall on a phone as in the article column */
+html[data-embed="seats"] #dm-eh .ehx-seats-r{display:grid;grid-template-columns:minmax(72px,120px) minmax(0,1fr) 78px 48px;column-gap:14px;align-items:start}
+html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r{align-items:end;padding:0 8px 9px;border-bottom:3px solid #181818;font-family:Archivo,"Helvetica Neue",Arial,sans-serif;font-stretch:87.5%;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5e574e;white-space:nowrap}
+html[data-embed="seats"] #dm-eh .ehx-seats-b .ehx-seats-r{padding:calc(10px + var(--ehx-rp,0px)) 8px calc(9px + var(--ehx-rp,0px));border-bottom:1px solid var(--dm-grey-1,#e3e3e3)}
+html[data-embed="seats"] #dm-eh .ehx-seats-b .ehx-seats-r > :is(.p,.n){min-height:18px;line-height:18px}
 html[data-embed="seats"] #dm-eh .ehx-seats .n{text-align:right;white-space:nowrap}
 html[data-embed="seats"] #dm-eh .ehx-seats .p{display:flex;align-items:center;gap:10px;min-width:0}
 html[data-embed="seats"] #dm-eh .ehx-seats .p i{flex:none;width:12px;height:12px;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.16)}
 html[data-embed="seats"] #dm-eh .ehx-seats .p b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 html[data-embed="seats"] #dm-eh .ehx-seats .v{color:#4a443c}
 html[data-embed="seats"] #dm-eh .ehx-seats .s{font-weight:700}
+/* the bar, the hub's: ward votes solid, PR hatched, district dotted, 2px apart; the figures under it */
+html[data-embed="seats"] #dm-eh .ehx-seats .b{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+html[data-embed="seats"] #dm-eh .ehx-seats .bar{display:flex;gap:2px;height:18px;min-width:3px;border-radius:5px;overflow:hidden;box-shadow:0 1.5px 1px rgba(23,23,23,.24)}
+html[data-embed="seats"] #dm-eh .ehx-seats .bar i{flex:0 1 0%;min-width:0;height:100%}
+html[data-embed="seats"] #dm-eh .ehx-seats :is(.bar,.k) :is(i.w,i.a){background:var(--c)}
+html[data-embed="seats"] #dm-eh .ehx-seats :is(.bar,.k) i.l{background:repeating-linear-gradient(-45deg,var(--c) 0 2.5px,transparent 2.5px 6.5px);box-shadow:inset 0 0 0 1px var(--c)}
+html[data-embed="seats"] #dm-eh .ehx-seats :is(.bar,.k) i.d{background:radial-gradient(circle,var(--c) 1.4px,transparent 1.8px) 0 0/5px 5px;box-shadow:inset 0 0 0 1px var(--c)}
+html[data-embed="seats"] #dm-eh .ehx-seats .sp{align-self:stretch;display:flex;flex-wrap:wrap;gap:2px 0;margin-right:calc(-1 * var(--sx));font-size:11.5px;line-height:1.3;color:#5e574e;white-space:nowrap}
+html[data-embed="seats"] #dm-eh .ehx-seats .sp span + span::before{content:"\00b7";margin:0 7px;color:#b8b2a9}
+/* the key, over the bars */
+html[data-embed="seats"] #dm-eh .ehx-seats .k{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;letter-spacing:.06em}
+html[data-embed="seats"] #dm-eh .ehx-seats .k span{display:inline-flex;align-items:center;gap:5px}
+html[data-embed="seats"] #dm-eh .ehx-seats .k i{--c:#181818;display:block;flex:none;width:10px;height:10px;border-radius:2px}
 /* the bar's gutter beside the rows (embed-fit.css): the headings keep over their columns */
 html[data-embed="seats"] #dm-eh .ehx-seats:has(> .ehx-seats-b[data-ehx-sc]) > .ehx-seats-h{padding-right:22px}
 @media (max-width:640px){
-html[data-embed="seats"] #dm-eh .ehx-seats{margin-top:14px;font-size:14px}
-html[data-embed="seats"] #dm-eh .ehx-seats-r{grid-template-columns:minmax(0,1fr) 84px 44px;column-gap:8px}
+html[data-embed="seats"] #dm-eh .ehx-seats{--sx:124px;margin-top:14px;font-size:14px}
+html[data-embed="seats"] #dm-eh .ehx-seats-r{grid-template-columns:minmax(60px,96px) minmax(0,1fr) 68px 36px;column-gap:10px}
 html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r{padding:0 5px 8px}
-html[data-embed="seats"] #dm-eh .ehx-seats-b .ehx-seats-r{padding:8px 5px}
+html[data-embed="seats"] #dm-eh .ehx-seats-b .ehx-seats-r{padding:calc(9px + var(--ehx-rp,0px)) 5px calc(8px + var(--ehx-rp,0px))}
 html[data-embed="seats"] #dm-eh .ehx-seats .v{font-size:13px}
+}
+/* a phone: the columns closer, the key on a line of its own over the headings */
+@media (max-width:480px){
+html[data-embed="seats"] #dm-eh .ehx-seats{--sx:98px}
+html[data-embed="seats"] #dm-eh .ehx-seats-r{grid-template-columns:minmax(56px,92px) minmax(0,1fr) 56px 26px;column-gap:8px}
+html[data-embed="seats"] #dm-eh .ehx-seats .p{gap:7px}
+html[data-embed="seats"] #dm-eh .ehx-seats .p i{width:10px;height:10px}
+html[data-embed="seats"] #dm-eh .ehx-seats .p b{font-size:13.5px}
+html[data-embed="seats"] #dm-eh .ehx-seats .sp{font-size:11px}
+html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r{row-gap:8px}
+html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r > .k{grid-column:1/-1;grid-row:1}
+html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r > :not(.k){grid-row:2}
+html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r > .p{grid-column:1/3}
+html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r > .k:empty{display:none}
+html[data-embed="seats"] #dm-eh .ehx-seats-h .ehx-seats-r:has(> .k:empty) > *{grid-row:auto}
 }

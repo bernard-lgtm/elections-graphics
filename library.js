@@ -11,6 +11,8 @@
   var HERE = location.href.replace(/[#?].*$/, '').replace(/[^\/]*$/, '');
   var LOCAL = location.protocol === 'file:' || /(^|\.)claudeusercontent\.com$|^localhost$|^127\.|^0\.0\.0\.0$|^10\.|^192\.168\./.test(location.hostname);
   var BASE = LOCAL && C.publicBase ? String(C.publicBase).replace(/\/?$/, '/') : HERE;
+  var FIG = { live: '', count: 'data=sample&at=60', complete: 'data=sample&at=100', final: 'data=sample&at=100&decl=1', '2021': 'data=2021' };
+  var FIG_NOTE = { live: '', count: 'The previews show a made-up count in progress (60% of voting districts in), built from the 2021 figures. Codes and links still show the live results.', complete: 'The previews show a made-up count that is complete, its seats provisional. Codes and links still show the live results.', final: 'The previews show a made-up count that the Commission has declared. Codes and links still show the live results.', '2021': 'The previews show the real 2021 results. Codes and links still show the live 2026 results.' };
   // the two menus in the bar: the embeds (#g-<graphic>) and the images (#s-<graphic>)
   var MODE = {
     live: { name: 'Interactive graphics', card: 'Interactive graphic', hash: 'g-', lead: 'Embeds for articles: an iframe at a fixed height that keeps itself up to date as the count goes on.' },
@@ -20,16 +22,17 @@
   // column and a phone (the PNG, at twice the width, is 1080 wide, a social post's width), or at either of those
   var WID = { live: [[668, 'Article column \u00b7 668'], [360, 'Phone \u00b7 360'], [1100, 'Wide \u00b7 1100']], still: [[540, 'Standard \u00b7 540'], [668, 'Article column \u00b7 668'], [360, 'Phone \u00b7 360']] };
   var q = new URL(location.href).searchParams;
-  var UI = { fig: 'live', w: 668, sw: 540, mode: 'live' };
+  var TW = window.EHX_TWEAKS || {}; // the preview page's Tweaks (Elections Hub graphics library v3.html): fig, the figures the previews show
+  var UI = { fig: FIG.hasOwnProperty(TW.fig) ? TW.fig : 'live', w: 668, sw: 540, mode: 'live' };
   function curW() { return UI.mode === 'still' ? UI.sw : UI.w; }
   var S = {};
-  GR.forEach(function (g) { S[g.id] = { area: g.provOnly ? 'GP' : '', muni: 'jhb', ward: g.ward ? '1' : '', view: g.views ? g.views[0][0] : '', h: 0, hw: 0 }; });
+  GR.forEach(function (g) { S[g.id] = { area: g.provOnly ? 'GP' : '', muni: g.muni || 'jhb', ward: g.ward ? '1' : '', view: g.views ? g.views[0][0] : '', h: 0, hw: 0 }; });
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function gOf(id) { return GR.filter(function (g) { return g.id === id; })[0]; }
   function viewOf(g) { var s = S[g.id]; return (g.views || []).filter(function (v) { return v[0] === s.view; })[0] || null; }
   function wardsOf(k) { var r = MUNI[k], w = r ? r[4] : 0, a = []; if (Array.isArray(w)) return w.map(String); for (var i = 1; i <= (+w || 0); i++) a.push(String(i)); return a; }
   function int(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0'); }
-  // the version's address: on the published library (link), or beside this page (the frame)
+  // the version's address: on the published library (link), or beside this page with the preview figures (the frame)
   function params(g) {
     var s = S[g.id], p = new URLSearchParams();
     p.set('embed', g.id);
@@ -38,22 +41,33 @@
     return p.toString();
   }
   function link(g) { return BASE + 'graphic.html?' + params(g); }
-  function frameSrc(g, extra) { return DIR + 'graphic.html?' + params(g) + (UI.mode === 'still' ? '&mode=still' : '') + (extra ? '&' + extra : ''); }
+  function frameSrc(g, extra) { return DIR + 'graphic.html?' + params(g) + (UI.mode === 'still' ? '&mode=still' : '') + (FIG[UI.fig] ? '&' + FIG[UI.fig] : '') + (extra ? '&' + extra : ''); }
   function place(g) {
     var s = S[g.id];
     if (g.group === 'area') return PN[s.area] || 'South Africa';
     var r = MUNI[s.muni]; return (r ? r[1] : s.muni) + (g.ward ? ', Ward ' + s.ward : '');
   }
   function titleOf(g) { var v = viewOf(g); return (v ? v[2] : g.kicker || g.name) + ': ' + place(g) + ' \u00b7 Daily Maverick'; }
-  // the frame's height: the graphic's fixed height (graphics.js), the same on desktop and phones; the graphic fits itself to it
-  function codeH(g) { var s = S[g.id]; return (g.hv && g.hv[s.view]) || g.h || 760; }
-  function code(g) {
-    var h = codeH(g);
-    return '<iframe src="' + esc(link(g)) + '" title="' + esc(titleOf(g)) + '" width="100%" height="' + h + '"' + (g.locate ? ' allow="geolocation"' : '') + ' scrolling="no" frameborder="0" loading="lazy" style="display:block;width:100%;max-width:100%;height:' + h + 'px;border:0;overflow:hidden"></iframe>';
+  // the frame's height: the graphic's fixed height (graphics.js), the same on desktop and phones; the graphic fits itself to it. A graphic
+  // with auto (Council seats, v3.7): the height measured for the place picked, where it could be measured (AUTO, below)
+  function codeH(g) { var s = S[g.id], a = g.auto && AUTO[autoKey(g)]; return (a && a.h) || (g.hv && g.hv[s.view]) || g.h || 760; }
+  /* v3.11 · a graphic with fluid (Results by ward): measured at the article column's width and a phone's, its code's height follows the
+     frame's width between the two (aspect-ratio, min-height and max-height in its style; no script): hi in the article column and wider,
+     lo on a phone, as tall as the width needs in between. fluid() gives [lo, hi], or null where there is one height. */
+  var FLUID_W = 668;
+  function fluid(g) { var a = g.fluid && AUTO[autoKey(g)]; return a && a.h && a.lo && a.lo < a.h ? [a.lo, a.h] : null; }
+  function sizeFrame(g, f) {
+    var p = fluid(g), st = f.style;
+    st.height = p ? 'auto' : codeH(g) + 'px'; st.aspectRatio = p ? FLUID_W + ' / ' + p[1] : ''; st.minHeight = p ? p[0] + 'px' : ''; st.maxHeight = p ? p[1] + 'px' : '';
   }
-  // a still's file name carries the time of its figures (SAST)
+  function code(g) {
+    var h = codeH(g), p = fluid(g), css = p ? 'height:auto;aspect-ratio:' + FLUID_W + ' / ' + p[1] + ';min-height:' + p[0] + 'px;max-height:' + p[1] + 'px' : 'height:' + h + 'px';
+    return '<iframe src="' + esc(link(g)) + '" title="' + esc(titleOf(g)) + '" width="100%" height="' + (p ? p[0] : h) + '"' + (g.locate ? ' allow="geolocation"' : '') + ' scrolling="no" frameborder="0" loading="lazy" style="display:block;width:100%;max-width:100%;' + css + ';border:0;overflow:hidden"></iframe>';
+  }
+  // a still's file name carries the time of its figures (SAST), or what they are (the sample, 2021)
   function when(at) {
     if (!at) return '';
+    if (at.tag) return at.tag;
     var d = new Date(at.t + 72e5), p = function (n) { return ('0' + n).slice(-2); };
     return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + '-' + p(d.getUTCHours()) + p(d.getUTCMinutes());
   }
@@ -73,44 +87,59 @@
   }
   function wardOptions(k, sel) { return wardsOf(k).map(function (w) { return '<option value="' + w + '"' + (w === sel ? ' selected' : '') + '>Ward ' + w + '</option>'; }).join(''); }
   /* ---- the Coalition builder's list (hungOnly in graphics.js): only the councils with no majority in the figures the preview shows (the
-     seats as its half circle shows them), read through the preview's own frame, every province; read again after 5 minutes, at the next
-     preview. The list waits until they are read; where the results can't be read, every council is listed. ---- */
-  var HUNG = {}, HUNG_AGE = 300000, HUNG_NOTE = 'No council is hung in these figures yet. A council joins the list once its count is done and no party has a majority.';
+     seats as its half circle shows them), every province, read in a hidden frame of its own (v3.7: no longer the preview's, which a council
+     picked meanwhile sent elsewhere, so the reading never came back), again after five minutes. Never every council: until the first
+     reading the list holds the council on show alone (Lesedi, muni in graphics.js), and where the results can't be read the last list stays
+     and the reading is tried again 20 seconds on. The last list read is kept in the browser (localStorage, ehx-hung-v1), so the next visit
+     has it at once while it is read again. ---- */
+  var HUNG = {}, HUNG_AGE = 300000, HUNG_LS = 'ehx-hung-v1';
+  var HUNG_NOTE = 'No council is hung in these figures yet. A council joins the list once its count is done and no party has a majority.';
+  var HUNG_WAIT = 'Finding the hung councils in the results\u2026', HUNG_FAIL = 'The results could not be read to find the hung councils. Trying again\u2026';
+  try { (function () { var o = JSON.parse(localStorage.getItem(HUNG_LS) || '{}'); for (var f in o) if (o[f] && o[f].keys) HUNG[f] = { keys: o[f].keys, t: +o[f].t || 0 }; })(); } catch (x) {}
+  function saveHung() { try { var o = {}; for (var f in HUNG) if (HUNG[f] && HUNG[f].keys) o[f] = { keys: HUNG[f].keys, t: HUNG[f].t }; localStorage.setItem(HUNG_LS, JSON.stringify(o)); } catch (x) {} }
   function hungKeys() { var c = HUNG[UI.fig]; return c && c.keys ? COUNCILS.filter(function (r) { return c.keys[r[0]]; }).map(function (r) { return r[0]; }) : null; }
+  function hungNote(g) { if (!g.hungOnly) return ''; var c = HUNG[UI.fig], ks = hungKeys(); return !ks ? (c && c.failed ? HUNG_FAIL : HUNG_WAIT) : !ks.length ? HUNG_NOTE : ''; }
   function muniOpts(g) {   // [the options, whether there is a council to pick]
-    var s = S[g.id], c = g.hungOnly ? HUNG[UI.fig] : null, ks;
-    if (!g.hungOnly || (c && c.failed)) return [councilOptions(s.muni), true];
-    if (!(ks = hungKeys())) return ['<option value="">Finding the hung councils\u2026</option>', false];
+    var s = S[g.id], c = g.hungOnly ? HUNG[UI.fig] : null, ks, one = {};
+    if (!g.hungOnly) return [councilOptions(s.muni), true];
+    if (!(ks = hungKeys())) { one[s.muni] = 1; return [councilOptions(s.muni, one), false]; }
     if (!ks.length) return ['<option value="">No hung councils yet</option>', false];
     return [councilOptions(s.muni, c.keys), true];
   }
   function pickHung(g) {
-    var s = S[g.id], ks = hungKeys(), e = el(g), sel = e && e.querySelector('select[data-k="muni"]'), mo, m;
+    var s = S[g.id], ks = hungKeys(), e = el(g), sel = e && e.querySelector('select[data-k="muni"]'), mo;
     if (!e) return;
-    if (ks && ks.length && ks.indexOf(s.muni) < 0) s.muni = ks[0];
+    if (ks && ks.length && ks.indexOf(s.muni) < 0) s.muni = ks.indexOf(g.muni) >= 0 ? g.muni : ks[0];
     if (sel) { mo = muniOpts(g); sel.innerHTML = mo[0]; sel.disabled = !mo[1]; }
-    m = e.querySelector('.g-msg');
-    if (ks && !ks.length) msg(g, HUNG_NOTE); else if (m && m.textContent === HUNG_NOTE) msg(g, '');
   }
-  function scanHung(g, f) {
-    var fig = UI.fig, c = HUNG[fig], w, t0 = Date.now(), out = false;
-    if (c && (c.busy ? t0 - c.busy < 30000 : t0 - c.t < HUNG_AGE)) return;
-    try { w = f.contentWindow; } catch (x) { return; }
+  // the note under the button: the list's state first, then the height measured (autoUi)
+  function paintNote(g) { if (g.auto && UI.mode === 'live') autoUi(g); else if (g.hungOnly) msg(g, hungNote(g)); }
+  function scanHung(g) {
+    var fig = UI.fig, c = HUNG[fig], t0 = Date.now(), out = false;
+    if (c && (c.busy ? t0 - c.busy < 60000 : c.keys && t0 - c.t < HUNG_AGE)) return;
     HUNG[fig] = { keys: c && c.keys, t: c ? c.t : 0, busy: t0 };
+    var f = document.createElement('iframe'), w;
+    f.className = 'lib-shot'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1; f.style.width = '668px'; f.style.height = '900px';
+    f.src = DIR + 'graphic.html?embed=' + g.id + '&muni=' + encodeURIComponent(g.muni || S[g.id].muni) + '&fit=0&still=1' + (FIG[fig] ? '&' + FIG[fig] : '');
     function done(keys) {
-      if (out) return; out = true;
-      HUNG[fig] = keys ? { keys: keys, t: Date.now() } : c && c.keys ? { keys: c.keys, t: c.t } : { failed: true, t: 0 };
+      if (out) return; out = true; f.remove();
+      if (keys) { HUNG[fig] = { keys: keys, t: Date.now() }; saveHung(); }
+      else { HUNG[fig] = { keys: c && c.keys, t: c ? c.t : 0, failed: true }; setTimeout(function () { if (UI.fig === fig && CUR === g && el(g)) scanHung(g); }, 20000); }
       if (UI.fig !== fig || CUR !== g || !el(g)) return;
       var was = S[g.id].muni; pickHung(g);
-      if (S[g.id].muni !== was) load(g);
+      if (S[g.id].muni !== was) load(g); else paintNote(g);
     }
     setTimeout(function () { done(null); }, 45000);
-    (function wait() {
-      var R = null; try { R = w.EH_RES; } catch (x) {}
-      if (R && R.ready && R.province && R.IX && R.seatsView && R.hungOf) return read(R);
-      if (Date.now() - t0 > 20000) return done(null);
-      setTimeout(wait, 200);
-    })();
+    f.onload = function () {
+      try { w = f.contentWindow; } catch (x) { return done(null); }
+      (function wait() {
+        var R = null; try { R = w.EH_RES; } catch (x) {}
+        if (R && R.ready && R.province && R.IX && R.seatsView && R.hungOf) return read(R);
+        if (Date.now() - t0 > 25000) return done(null);
+        setTimeout(wait, 200);
+      })();
+    };
+    document.body.appendChild(f);
     function read(R) {
       R.ready().then(function () {
         if (R.S && R.S.state === 'error') throw new Error('no results');
@@ -144,6 +173,81 @@
       '<div class="g-stage"><iframe title="' + esc(g.name) + (still ? ': still graphic' : ': preview') + '"' + (g.locate && !still ? ' allow="geolocation"' : '') + (still ? ' scrolling="no"' : '') + ' loading="lazy"></iframe></div></article>';
   }
   var CUR = null; // the graphic on the page: the only card, the only frame loading
+  /* ---- v3.7 · a graphic with auto in graphics.js (Council seats, Coalition builder): the code is as tall as the graphic needs for the council
+     picked, every party in it. Measured when the council is picked, in hidden frames with the live results (as the code shows them), each
+     taller than the graphic needs, which says how much of it it needs (EH_FIT.need, embed-fit.js): at the article column's width and a
+     phone's, the larger of the two (aw in graphics.js: the Coalition builder a phone's alone, its half circle drawn as large as that room
+     allows in the article column), rounded up to 10px; measured again after five minutes. Copy embed code waits for it the first time.
+     Where the council's seats aren't in yet, or the graphic can't be measured, the code has the graphic's own height (h), and the message
+     under the button says so.
+     v3.11 · Results by ward (fluid): measured for the council and the view picked, its map at its full size (as wide as the frame, or as
+     tall as the hub draws it) at each width, never taller than its own height (h), so nothing is left empty around the map or under it.
+     Until the council's ward results are in (the key under the map waits for them), the code has h and is measured again 30 seconds on. ---- */
+  var AUTO = {}, AUTO_AGE = 300000, AUTO_W = [668, 360];
+  function autoKey(g) { return g.id + '|' + S[g.id].muni + (g.views ? '|' + S[g.id].view : ''); }
+  // a frame measured, Results by ward: 1, its map drawn and the ward results in (the key under the map has its rows; Change since 2021: both
+  // maps drawn, or the one there is); 0, the results not in yet (the key waits for them); -1, the map not drawn yet
+  function wardsIn(W) {
+    var d = W.document, v = W.EHX && W.EHX.view;
+    if (v === 'cmp') return d.querySelector('.mf-wm-cmp .mf-wc-box svg') && !d.querySelector('.mf-wm-cmp .mf-wc-box.is-wait:not(.is-fail)') ? 1 : -1;
+    if (!d.querySelector('.mf-wmap--res .mf-wm-box svg')) return -1;
+    return d.querySelector('.mf-wmap--res .mf-wm-pane.is-on .res-tkey') ? 1 : d.querySelector('.mf-wmap--res .mf-wm-pane.is-on .mf-wm-note') ? 0 : -1;
+  }
+  function shortMuni(g) { var r = MUNI[S[g.id].muni]; return r ? r[1].replace(/ Local Municipality$/, '') : S[g.id].muni; }
+  function measure(g) {
+    var key = autoKey(g), a = AUTO[key], muni = S[g.id].muni, t0 = Date.now(), made = [];
+    if (a && (a.busy || t0 - a.t < AUTO_AGE)) return;
+    AUTO[key] = { busy: true, h: a ? a.h : 0, n: a ? a.n : 0, t: a ? a.t : 0 };
+    var src = DIR + 'graphic.html?' + params(g) + '&still=1';
+    function one(w) {
+      return new Promise(function (ok, no) {
+        var f = document.createElement('iframe');
+        f.className = 'lib-shot'; f.setAttribute('aria-hidden', 'true'); f.tabIndex = -1; f.style.width = w + 'px'; f.style.height = '2400px';
+        f.onload = function () {
+          (function wait() {
+            var W = null, E = null; try { W = f.contentWindow; E = W.EH_EMBED; } catch (x) {}
+            if (!E) { if (Date.now() - t0 > 25000) no(new Error('not loaded')); else setTimeout(wait, 150); return; }
+            E.ready(g.fluid ? 15000 : 25000).then(function (done) {
+              var k = E.state().k, d = W.document, F = W.EH_FIT, wi, nr;
+              /* Results by ward: measured once its map is drawn and the results are in, though the count's last wards may still be coming in
+                 (the page then never settles); without the key's No result yet row, which goes once they are in */
+              if (g.fluid && F && k !== 'loading' && k !== 'error' && (wi = wardsIn(W)) >= 0) {
+                if (!wi) return ok({ h: 0, n: 0 });
+                nr = d.querySelector('.mf-wmap--res .mf-wm-pane.is-on .res-tkey tr.is-nr');
+                return ok({ h: F.need() - (nr ? nr.getBoundingClientRect().height : 0), n: 1 });
+              }
+              if (!done || !F || k === 'loading' || k === 'error' || g.fluid) return no(new Error('not read'));
+              ok({ h: F.need(), n: d.querySelectorAll(g.id === 'coalition' ? '.mf-coal-row .mf-cp' : '.ehx-seats-b .ehx-seats-r').length });
+            }, no);
+          })();
+        };
+        f.onerror = no; f.src = src; made.push(f); document.body.appendChild(f);
+      });
+    }
+    Promise.all((g.aw || AUTO_W).map(one)).then(function (r) {
+      var n = r[0].n, h = Math.max.apply(null, r.map(function (x) { return x.h; })), cap = g.h || 760, hi;
+      if (g.fluid) AUTO[key] = r[0].n && r[1].n ? { h: hi = Math.min(cap, Math.floor(r[0].h / 10) * 10), lo: Math.min(hi, Math.floor(r[1].h / 10) * 10), n: 1, t: Date.now() } : { h: 0, none: true, t: Date.now() - AUTO_AGE + 30000 };
+      else AUTO[key] = n ? { h: Math.ceil(h / 10) * 10, n: n, t: Date.now() } : { h: 0, none: true, t: Date.now() };
+    }, function () {
+      AUTO[key] = { h: 0, failed: true, t: Date.now() - AUTO_AGE + 30000 };   // tried again 30 seconds on, at the next pick
+    }).then(function () {
+      made.forEach(function (f) { f.remove(); });
+      if (CUR === g && UI.mode === 'live' && autoKey(g) === key && el(g)) { sizeFrame(g, frame(g)); autoUi(g); }
+    });
+  }
+  // Copy embed code and the note under it, for what the measuring has found
+  function autoUi(g) {
+    var b = el(g).querySelector('[data-act="code"]'), a = AUTO[autoKey(g)] || {}, nm = shortMuni(g), wait = !!a.busy && !a.h, hn = hungNote(g);
+    b.disabled = wait; if (!b.classList.contains('is-done')) b.textContent = wait ? 'Measuring\u2026' : 'Copy embed code';
+    if (hn) msg(g, hn);
+    else if (wait) msg(g, 'Measuring the graphic for ' + nm + ', so the code is as tall as ' + (g.fluid ? 'its map needs' : g.aw ? 'it needs' : 'its parties need') + '\u2026');
+    else if (a.h && g.fluid) { var p = fluid(g); msg(g, p ? 'The code is ' + p[1] + 'px high in the article column and ' + p[0] + 'px on a phone (its height follows its width), so no room is left empty around ' + nm + '\u2019s map.' : 'The code is ' + a.h + 'px high, so no room is left empty around ' + nm + '\u2019s map in the article column or on a phone.'); }
+    else if (a.h && g.aw) msg(g, 'The code is ' + a.h + 'px high, the height ' + nm + '\u2019s graphic needs on a phone. In the article column the half circle is drawn as large as that room allows.');
+    else if (a.h) msg(g, 'The code is ' + a.h + 'px high, the height ' + nm + '\u2019s ' + a.n + (a.n === 1 ? ' party' : ' parties') + ' with seats need in the article column and on a phone.');
+    else if (a.none && g.fluid) msg(g, nm + '\u2019s ward results aren\u2019t in yet, so the code has the standard height (' + codeH(g) + 'px). Copy it again once they are, for the height its map needs.');
+    else if (a.none) msg(g, nm + '\u2019s seats aren\u2019t in yet, so the code has the standard height (' + codeH(g) + 'px). Copy it again once they are, for the height its parties need.');
+    else if (a.failed) msg(g, 'The graphic could not be measured, so the code has the standard height (' + codeH(g) + 'px).', true);
+  }
   function el(g) { return document.getElementById('g-' + g.id); }
   function frame(g) { return el(g).querySelector('.g-stage iframe'); }
   function msg(g, t, err) { var m = el(g).querySelector('.g-msg'); m.textContent = t || ''; m.classList.toggle('is-err', !!err); }
@@ -165,10 +269,12 @@
   function load(g) {
     if (g.hungOnly) pickHung(g);
     var f = frame(g), still = UI.mode === 'still';
-    if (g.hungOnly) f.onload = function () { scanHung(g, f); };
     S[g.id].h = 0; f.src = frameSrc(g); f.style.width = curW() + 'px';
-    if (!still || !f.style.height) f.style.height = codeH(g) + 'px';
+    if (!still) sizeFrame(g, f); else if (!f.style.height) f.style.height = codeH(g) + 'px';
     if (still) { paintSize(g); fitStill(g); }
+    else if (g.auto) measure(g);
+    if (g.hungOnly) scanHung(g);
+    if (!still) paintNote(g);
   }
   function setView(g, v) {
     S[g.id].view = v;
@@ -176,7 +282,7 @@
     msg(g, ''); load(g);
   }
   /* ---- the menus (Interactive graphics and Still graphics, in the bar at the top): every graphic in its group, with a snapshot of it
-     (assets/menu/); pointing at a view shows that view's. Still graphics leaves out
+     (assets/menu/, drawn by qa/menu-thumbs.html from the sample count); pointing at a view shows that view's. Still graphics leaves out
      the graphics that need a reader (noStill). A graphic or a view picked replaces the one on the page. ---- */
   var bar = document.querySelector('.lib-top'), navBtns = [], navPanel, navScrim, navMode = '', navSeen = false;
   var groups = [['area', 'lib-cards-area'], ['muni', 'lib-cards-muni']].map(function (x) { var h = document.getElementById(x[1]).previousElementSibling; return { k: x[0], name: h ? h.textContent : '' }; });
@@ -241,6 +347,12 @@
     pages[h] = { btn: btn, el: el }; el.classList.add('lib-page'); el.hidden = true; main.appendChild(el);
     btn.addEventListener('click', function () { if (page !== h) pageShow(h); });
     if (location.hash === '#' + h) pageShow(h);
+  };
+  // the figures the previews show (FIG), picked in the preview page's Tweaks: the graphic on the page loads again with them; codes and
+  // links keep the live results. Returns the note on the figures picked.
+  window.LIB_FIG = function (f) {
+    if (FIG.hasOwnProperty(f) && f !== UI.fig) { UI.fig = f; if (CUR && !page && el(CUR)) { msg(CUR, ''); load(CUR); } }
+    return FIG_NOTE[UI.fig] || '';
   };
   // the graphic picked: its card alone in its group (the other group's heading hidden), its frame loading and #g-… (interactive) or #s-…
   // (still) in the address; from a menu, also the view picked and the card under the bar
