@@ -1,47 +1,83 @@
-# Daily Maverick · Elections 2026 graphics library (final)
+# Daily Maverick · Elections 2026 graphics library v3 (Elections Hub post-elections v26)
 
-Every graphic on the Elections Hub as an embed for articles, and as a still image for newsletters. Built from library v3 on 5 November 2026, with live results only. Plain HTML, CSS and JavaScript, no build step.
+Every graphic on the Elections Hub as an embed for articles, with its own link and image downloads. Plain HTML, CSS and JavaScript, no build step. v3 replaces v2 (`elections-graphics-v2/`): the maps and the ward candidates now come from the RevEngine IEC service, the service the results come from (see What it talks to). Embed codes and links are the same as v2's.
 
-## Publish (GitHub Pages)
+## Publish it (GitHub Pages)
 
-1. Upload everything in this folder to the root of `bernard-lgtm/elections-graphics`: `index.html` at the top, with the folders `assets/`, `data/`, `fonts/` and `hub/` beside it.
+The repository is `bernard-lgtm/elections-graphics` (public); the library is published at `https://bernard-lgtm.github.io/elections-graphics/`, the `publicBase` in `config.js`.
+
+1. Upload this folder's contents to the root of the repository with its folders (`hub/`, `data/`, `fonts/`, `assets/`): `index.html` at the top, not inside a folder.
 2. Settings → Pages → Deploy from a branch → `main`, `/ (root)` → Save.
-3. The library is at `https://bernard-lgtm.github.io/elections-graphics/`, the `publicBase` in `config.js`. For another repository, put its address there.
+3. For another repository, put the address it gets (`https://<user>.github.io/<repo>/`) in `config.js` as `publicBase`, and publish again. On the published site the library uses its own address anyway; `publicBase` is what previews and local copies point the codes at. The library says whether anything is published there.
 
-Embed codes and links are the same as v3's, so codes already in articles keep working.
+Copy embed codes from the published library (or from a preview once `publicBase` is right).
 
-## Live results only
+## What a journalist does
 
-Every embed shows the results from Daily Maverick's RevEngine IEC service and reads them again every 5 minutes while the count is on. The embeds hold no sample or test figures, and no address parameter switches to them.
+Pick the graphic's place and view, press **Copy embed code**, paste it into the article's HTML block. The code is one iframe tag with a fixed height (no script), the same on desktop and on phones, so it works in a dynamic article. **Copy link** gives the version's own address; **Test in an article** shows the code in a mock article column, desktop and phone.
 
-Taken out of v3:
+**Interactive graphics** and **Still graphics**, in the bar at the top of the library, each open every graphic with a snapshot of it, in the page's two groups; pointing at one of a graphic's views shows that view. The library shows one graphic at a time, so only its preview loads: a graphic or a view picked replaces the one on the page, and the address gets `#g-<graphic>` for the interactive one (`#g-seats`, with the embed code open) or `#s-<graphic>` for the still one, so a link to the library with it opens at that graphic. Without it the library opens at the first interactive graphic. **Still version** and **Interactive version** on a card switch between the two, keeping the place and view picked.
 
-- `hub/elections-hub-post-v26-preview.js` (3.9 MB): the preview build, with the sample count and the sample's ward candidates.
-- The `&data=sample` and `&data=2021` switch in `graphic.html` and `embed-boot.js`, with its `&at=`, `&decl=` and `&now=` settings.
-- The "Sample figures for testing" and "2021 figures" labels in `embed.js` and `embed.css`, and the figures picker in `library.js`.
-- `article-test.html` (the mock article) and an unused masthead file.
+**Hub anchors**, beside All graphics, has a link to every part of the Elections Hub, the hub's address with an anchor after the #, made as the hub makes them ("anchors" in the hub's script): the page's sections; for South Africa or the province picked, each tab and its parts; for the council picked (the 44 district councils too), its file, the ward picked, its ward dropdown and its coalition mode. A click on one copies its link and shows it at the top of the menu, with Open beside it. The links go to `hubUrl`, or to `declaredUrl` from the day set in `declared`. The councils' anchors come from their names in `councils.js` and `districts.js` (both made from the hub's SA_MUNIS): if the hub renames a council, make both files again.
+
+## Fixed heights
+
+Each graphic has a fixed height in `graphics.js` (`h`, or `hv` for a view): 780px for most (the coalition builder too), 800 for the two councils maps, 540 for party support, 660 for the Change since 2021 maps, 740 for votes by party, 860 for the ward result with ward finder. These include the credit at the foot: the link to the hub with the masthead beside it (20px was added to every height when the credit had two lines). Inside the frame (`embed-fit.css`, `embed-fit.js`) the card is exactly as tall as the frame: the title, the count's progress and the credit keep their size, and the graphic takes the room between them. Maps are drawn as large as that room allows (their width set from its height); the ward map's box takes the room over its key. The coalition builder keeps every party under its half circle: where they need the room (a council with many parties, a phone), the half circle is drawn smaller. A list shows every row; where the room is short of them it scrolls in a box of its own, under a slim bar (party support, results by council, the hung councils list, votes by party, a ward's candidates). Party support under its map keeps the room of six and a half rows, so the map keeps its size. Under 560px the two maps of Change since 2021 become one map with a 2021 / 2026 switch. `&fit=0` on a graphic's address turns this off (the card as tall as its content, reporting its height by postMessage as before).
+
+To change a height, edit `graphics.js` and publish; codes already in articles keep the height they were copied with, so change the attribute in the article too.
+
+## Still graphics
+
+`graphic.html?…&mode=still` is the graphic drawn for an image (the library's Still graphics): no fixed height, the card as tall as what is in it, with no box that scrolls, nothing that needs a pointer (no tooltips, ? buttons, zoom or Go to buttons, arrows, rows that open; the card takes no pointer at all), the time of the figures right under the count's box, from the results service's last reading (`Figures as at 14:05 SAST on 5 November 2026`), and in the credit the source and the hub's address. The sample figures and the 2021 results say what they are in the time's place. The frame reports its height (postMessage, as with `&fit=0`) and the library's preview follows it, so the preview is the image. The Coalition builder and Ward result with ward finder are interactive only (`noStill` in `graphics.js`).
+
+v3.4: the lists are kept short (`embed.js`, "a still graphic's lists"; `embed.css`, "v3.4 · still graphics"). Votes by party has every party with seats on the council, then the rest together as Others, with how many parties it holds (until the seats are allocated, the five largest parties, then Others). Ward result has the candidates of the parties with seats on the council and any other candidate with 5% of the ward's votes or more (the leader always), the rest as Others. Others only when it holds two or more. Party support (beside the councils map, and Party support itself) is the hub's own: the five largest parties, then Others, shut. Hung councils, the list: one line a council (its name, the largest party, the seats it is short of a majority), the Provisional or Declared tag only where the list has both. Change since 2021 has its two maps side by side from 480px wide. Votes by party is one line a party: the ward and PR split under each bar (which shows only on a row the pointer opens) is left out, as it widened the share column past the card. No list keeps the hub's room for a row that rises under the pointer, whose negative margin left the credit's foot cut off in the image.
+
+The width: 540 by default, between the article column (668) and a phone (360), both of which the library offers too. Download PNG, the card's one image, is the still at twice the width picked: 1080 for a 540 still, a social post's width, and its type reads on a phone as in an article. The library lays the frame out at exactly the width picked, whatever the window (a narrower window shows the preview smaller), so the image is always that width. The image: the graphic's whole height at twice the width picked (under 16 million pixels); the file name ends with the figures' time (`…-map-sa-still-20261105-1405@2x.png`). The square and wide formats are still in `export.js` and `../qa/embed-check.html`, but not on the card. `../qa/still-check.html?w=540,360` draws every still graphic at those widths (`&muni=`, `&area=`, `&only=votes,ward`) and lists what is clipped or sticks out.
+
+## The embeds
+
+`graphic.html?embed=<graphic>` with `&area=GP` (a province; none for South Africa) or `&muni=<key>` (`&ward=<n>` for a ward), and `&view=` where a graphic has views. The graphics and their views are listed in `graphics.js`; the councils and their wards in `councils.js`.
+
+Each embed is a white card at the fixed height: the title with the count's box for that place on its right, as on the Elections Hub (Counting in red with the share of voting districts in, Count complete in charcoal while the results are provisional, Results declared in green with the day), the graphic, and a link to the graphic's own place on the Elections Hub with the masthead. The coalition builder is its own, simpler than the hub's coalition mode: one line on the seats a coalition needs with Start again beside it, then the half circle with the tally in its middle and the parties to pick; no Hung council banner and no Back to results. It reads the results every 5 minutes while the count is on, as the hub does: the RevEngine results service updates every 5 minutes. On the maps of a province (Councils by leading party, Councils by turnout, Hung councils, Change since 2021) a council clicked, with a mouse as with a tap, stands up with its tooltip and a Go to municipality button, which opens the council on the hub in a new tab; a click on another council moves it there, a click off the councils or Escape puts it down. A council clicked in a list (Results by council, the Hung councils list) opens on the hub straight away. An embed never scrolls itself or the article.
+
+Preview-only parameters (never in codes or links): `&data=sample` (with `&at=` the share counted, `&decl=1` declared) or `&data=2021`.
+
+**All ward results with finder** (`embed=wardpick`, library v3.2) is Ward result (single) with the hub's ward dropdown, every ward of the council, and the hub's Use my location beside it (under it on phones). It opens on the ward in its address; the reader can pick another, or press Use my location, which opens the ward they are in, in whichever council that is, with a note under the dropdown saying so (and, where the fix is rough, a link to the Electoral Commission's ward lookup). The title, the count's box and the link to the hub follow the ward on show. The ward is worked out in the browser, as on the hub: the extents in `data/ward-geo.json`, then the Demarcation Board's outlines of the wards nearby. Its embed code carries `allow="geolocation"`, without which a browser refuses the location to a frame from another site; the article page must not refuse it either (a `Permissions-Policy` header with `geolocation=()` would). Where the location is refused or not found, the hub's message says so and points to the dropdown.
+
+**Share on WhatsApp** (library v3.5), in the two ward graphics, interactive only: the hub's button in the ward box, to the right of the candidate who won or leads, as on the hub (on phones under them, over the source line; the hub has it over its ward dropdown there). It opens WhatsApp with the hub's message and a link to the ward on the hub by its anchor (`https://www.dailymaverick.co.za/local-elections-results-2026/#johannesburg-ward-12`; `declaredUrl` once the embed shows Results declared), which opens the council's file at that ward's results. In All ward results with finder it follows the ward on show. The hub writes the link to the page the button stands on; `embed.js` (`paintShare`) points it at the hub (`EH_EMBED.share()` in an embed's console gives it).
 
 ## Settings (config.js)
 
-- `publicBase`: the address the library is published at.
-- `hubUrl`: the results page. Every link out of an embed opens it at the graphic's place.
-- `declaredUrl`: the results declared page, which the links open once an embed shows Results declared.
-- `declared`, `deadline`, `sittings`: the same as `data-declared`, `data-deadline` and `#eh-sittings` on the hub. Set them here on the day they are set on the hub.
-
-Embeds in articles read `config.js` each time they load, so a change needs no new embed codes.
+`publicBase`; `hubUrl`, the results page (`https://www.dailymaverick.co.za/local-elections-results-2026/`), which every link out of an embed opens at the graphic's own place (All results under the graphic, the rest of a list, a council clicked on a map of South Africa or a province: `#johannesburg`, `#johannesburg-ward-12`, `#turnout-gauteng`); `declaredUrl`, the results declared page (`https://www.dailymaverick.co.za/local-elections-results-declared-2026/`), which the links open instead once the embed shows Results declared (from the day in `declared`; empty keeps them on `hubUrl`); and `declared`, `deadline`, `sittings`: the same as `data-declared`, `data-deadline` and `#eh-sittings` on the hub's markup. Set them here on the day they are set on the hub; embeds already in articles read the file each time they load.
 
 ## Files
 
-- `index.html`, `library.css`, `library.js`: the library. `anchors.js` and `districts.js`: its Hub anchors page. `illustrations.js`: its Header illustrations page.
-- `graphic.html`, `embed-boot.js`, `embed.js`, `embed.css`: the embed page. `embed-fit.js`, `embed-fit.css`: the fixed heights. `export.js`: the PNG images.
-- `graphics.js`: the graphics, their views and heights. `councils.js`: the councils and their wards.
-- `hub/`: the Elections Hub's live build (post-elections v26) that the embeds run on.
-- `data/ward-geo.json`: the ward extents for Use my location.
-- `assets/`: the masthead, the logo, the Header illustrations example and the menu's snapshots (`assets/menu/`, drawn from sample figures; they show in the library's menus only).
-- `fonts/`: DM Custom.
+- `index.html`, `library.css`, `library.js`: the library; `anchors.js` and `districts.js`: its Hub anchors menu; `illustrations.js`: its Header illustrations menu (contents to come); `assets/LGE2026-logo.webp`: the logo at the top.
+- `assets/menu/`: the menu's snapshots, one for each graphic and view (`<graphic>[-<view>].webp`, 480×360): the graphic at 668 without its title and credit, from the sample count complete (the two ward maps from the 2021 results); `wardpick.webp` is for now a copy of `ward.webp`, to be drawn afresh. `../qa/menu-thumbs.html` draws them (`?e=wards&fig=data%3D2021` for the ward maps); Download all saves them under these names. Draw them again when a graphic changes its look.
+- `graphic.html`, `embed-boot.js`, `embed.css`, `embed.js`: the embed page over the hub; `embed-fit.css`, `embed-fit.js`: the fixed height.
+- `export.js`: the images. The card is copied with its computed styles written inline and drawn through an SVG `foreignObject` onto a canvas, so the PNG is the graphic as it stands. The fonts go into the image as data: Geist, Charis SIL, Archivo and Barlow read from Google Fonts, DM Custom from `fonts/` beside `graphic.html` (the site's own copy, with the page's session, as a fallback), so an image drawn in a browser that blocks Google Fonts falls back to system fonts and the library says so under the button. `EH_EXPORT.diff()` in an embed's console compares the copy's layout with the page's (0 boxes out is a faithful copy); `EH_EXPORT.fontsStatus()` says which faces the last image embedded.
+- `../qa/embed-check.html?fig=complete&kind=png|square|wide&e=map,votes`: every embed drawn at 668 and 360 (or as a square or wide image), with its state, the title's and kicker's ink in the image against the page's (a font check), overflow, clipped boxes and the export's layout diff. Run it from the project; it keeps the embeds' timers going in a background tab.
+- `article-test.html`: the mock article.
+- `hub/`: the hub's v26 files with five changes: the results are read every 5 minutes (was 3), as on the hub since post-elections v28.1; the maps are read from the feed's map files ("the feed's maps" near the top of each file); the fast build reads a ward's candidates from the feed (`wardListFeed` in "results"); a council clicked with a mouse on a province's map gets Go to municipality, as a tap does (library v3.1, the note at the top of each file); an embed reads only what its graphic shows (library v3.6, see How much each graphic reads). `elections-hub-post-v26.js` (the fast CMS build, for live embeds) and `elections-hub-post-v26-preview.js` (the preview build, for the sample and 2021 figures, with the sample's ward candidates bundled).
+- `data/`: only `ward-geo.json`, the ward extents for Use my location (the hub's, and the ward finder's in All ward results with finder). The ward candidate files of v2 are gone.
 
 ## What it talks to
 
-- `iec-api.revengine.dailymaverick.co.za`: the results, ward candidates and maps. It must allow requests from the GitHub Pages address.
-- The Municipal Demarcation Board's map services (`services7.arcgis.com`), only when a map can't be read from the feed.
-- Google Fonts.
+Daily Maverick's RevEngine IEC service, `iec-api.revengine.dailymaverick.co.za` (it must allow requests from the GitHub Pages address), for everything the graphics show:
+
+- the results: `/local/2026`, `/local/2026/provinces/{province}`, a ward's at `/local/2026/provinces/{province}/municipalities/{id}/wards/{wardId}`, every ward of a council in one at `/local/2026/provinces/{province}/municipalities/{id}/wards` (Results by ward, library v3.6), and `/local/2021/…` for Change since 2021;
+- a ward's candidates: `/local/2026/wards/{wardId}/candidates` (the IEC's certified list of 16 September, name for name) and the council's parties for their abbreviations, `/local/2026/parties?province=…&municipality={code}`;
+- the maps: `/maps/2026/national.json` (provinces), `/maps/2026/provinces/{slug}.json` (a province's councils), `/maps/2026/municipalities/{code}.json` (a council's wards), and `/maps/2021/voting-districts/{code}.json`, from which the 2021 wards are put together in the browser.
+
+The Municipal Demarcation Board's map services (`services7.arcgis.com`) stand in only when a map can't be read from the feed; the browser console says so (`[elections-hub] map …`). Google Fonts. The hub's story feeds, videos and newsletter card are not part of the embeds and are not loaded.
+
+## How much each graphic reads (library v3.6)
+
+Calls to the service by one embed, on first load and then at each 5-minute refresh while the count is on (every 10 minutes after the count), measured on 6 November 2026 for South Africa, Gauteng and Johannesburg (`../qa/api-calls.html`, which runs each graphic as the article does and compares it with the files before v3.6 in `../qa/before/`):
+
+- Councils by leading party, Councils by turnout, Hung councils, of South Africa: 20 on load (the nine provinces and the ten map files), 10 a refresh. Change since 2021 of South Africa: 30, then 10.
+- Party support: 1 (South Africa) or 2 (a province), and the same a refresh. The other graphics of a province: 2 or 3, then 2; Hung councils of a province 11, then 10 (it counts every province's councils).
+- Council seats, Coalition builder, Votes by party: 2, then 2. Results by ward: 4, then 3 (7 with Change since 2021), and one more for each ward the council's read leaves out. Ward result, All ward results with finder: 5, then 3.
+- Nothing while the article's tab is hidden; one refresh once it is shown again.
+
+Before v3.6 every council graphic read every ward of its council for the ward map it hides (147 calls on load for Johannesburg, and 145 a refresh when the hidden map took itself to be on screen), every graphic read the nine provinces (10 calls a refresh), and the refresh went on in hidden tabs. A ward's own read sometimes fails (on 6 November, 18 of Johannesburg's 135 wards at once, HTTP 500); the ward graphics then take the ward from the council's read of every ward.

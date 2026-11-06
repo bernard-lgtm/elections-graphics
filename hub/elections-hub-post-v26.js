@@ -1,3 +1,11 @@
+/* Graphics library v3.6 (6 November 2026): lighter on the RevEngine IEC service. In an embed only the parts the graphic shows read the
+   feed (see "an embed reads only what its graphic shows"): the ward map reads only in Results by ward (until now every council graphic read
+   every ward of its council for the map it hides: 135 reads for Johannesburg); Results across South Africa reads its provinces and council
+   outlines only for its own maps and table (Party support takes its figures from the national totals); Hung councils reads its nine
+   provinces only in its own graphic; after the count, only the provinces the graphic shows are read again. The ward map reads every ward
+   of the council in one read (see "a council's wards in one read" in "results"). The timed read waits while the tab is hidden and runs
+   once it is shown again (see "while the tab is hidden" in "results"). qa/api-calls.html counts every graphic's calls.
+   Also v3.6: the Ward result graphics show the ward's votes by party and candidate again (they showed [object Promise]; see wardListFeed). */
 /* Graphics library v3.1 (4 November 2026): a council clicked with a mouse on the Councils by leading party, Councils by turnout and Hung
    councils maps of a province does as a tap does: it stands up with its tooltip and Go to municipality, which opens it on the Elections Hub
    (Change since 2021's maps already did). While it stands the pointer's hover rests; a click on another council moves it there, a click off
@@ -436,6 +444,28 @@
     return out.length ? out : rings;
   }
 
+  /* ==== graphics library v3.6 · an embed reads only what its graphic shows ====
+     graphic.html sets window.EHX (embed-boot.js) before this script runs. The parts of the page an embed's graphic doesn't show stand in its
+     markup (hidden by embed.css) and are reported in view (embed-boot.js), so until v3.6 they read the feed as on the hub. Now they read
+     nothing unless the graphic shows them:
+       councils   Results across South Africa's provinces: Councils by leading party, Councils by turnout, Results by council
+       outlines   its councils' outlines: Councils by leading party, Councils by turnout
+       hung       Hung councils' nine provinces: Hung councils, as its tab opens
+       wardmap    the ward map and its wards' results: Results by ward
+       allprov    every province once the count is done (for the hub's masthead and Hung councils): not in an embed, which reads again
+                  the provinces its graphic asked for
+     On the hub (no EHX) every part reads as before. */
+  function ehxShows(part) {
+    var X = window.EHX, id = X && X.g ? X.g.id : '';
+    if (!id) return true;
+    if (part === 'councils') return /^(map|turnout|table)$/.test(id);
+    if (part === 'outlines') return /^(map|turnout)$/.test(id);
+    if (part === 'hung') return id === 'hung';
+    if (part === 'wardmap') return id === 'wards';
+    return part !== 'allprov';
+  }
+  // the province an embed of South Africa or a province opens on ('' for South Africa), before the hub has set it from the anchor
+  function ehxArea() { var X = window.EHX; return X && X.g && X.g.group === 'area' ? X.area || '' : ''; }
   function guard(name, fn) {
     try { fn(); } catch (e) { if (window.console) console.error('[elections-hub] ' + name + ' failed:', e); }
   }
@@ -5871,7 +5901,7 @@ guard("results", function () {
       watchT = setInterval(function () {
         if (S.phase === 'final') { clearInterval(watchT); watchT = null; return; }
         if (pollT) return;
-        refresh();   // v14: the totals and the provinces read so far, for the councils whose seats are in since (v23: no progress report)
+        tick();   // library v3.6: not while the tab is hidden. v14: the totals and the provinces read so far, for the councils whose seats are in since (v23: no progress report)
       }, 600000);
     }
     S.phase = S.autoPhase ? guessPhase() : PIN;
@@ -6096,7 +6126,7 @@ guard("results", function () {
         // v9 · the phase before the page paints. v14 · once the count is done, the provinces too, waited for up to 1,5 s (every council's
         // seats, for the masthead and Hung councils); if they come later the phase is still applied. v23: no progress report
         var settled = false;
-        var pv = S.state === 'final' ? Promise.all(PROV_ORDER.map(function (pc) { return (provP[pc] || provinceP(pc, false, null)).catch(function () {}); })) : Promise.resolve();
+        var pv = S.state === 'final' && ehxShows('allprov') ? Promise.all(PROV_ORDER.map(function (pc) { return (provP[pc] || provinceP(pc, false, null)).catch(function () {}); })) : Promise.resolve();
         pv.then(function () { if (settled) rephase(); });
         return Promise.race([pv, new Promise(function (r) { setTimeout(r, 1500); })]).then(function () { settled = true; rephase(); startWatch(); return S.nat; });
       });
@@ -6205,13 +6235,43 @@ guard("results", function () {
       if (!m || !hasPrev()) return Promise.resolve(null);
       return provincePrev(m.p).then(function () { return IXP[key] ? norm(IXP[key].e) : null; }, function () { return null; });
     }
+    /* ---- library v3.6 · a council's wards in one read ----
+       {base}/{year}/provinces/{Province}/municipalities/{id}/wards holds every ward of the council: its ballots, without the voting district
+       list a ward's own read carries (which nothing here uses). The ward map asks for it (wardsAll; wardsAllPrev for 2021's wards, on
+       Change since 2021) in place of a read per ward (135 for Johannesburg, again at every refresh); from then on ward and wardPrev take the
+       council's wards from it. A ward it leaves out is read on its own: the feed leaves out a ward it can't answer for at that moment (in
+       Johannesburg on 6 November, two to eleven of its 135 wards, a different few each time). A council the feed has no such file for (404)
+       has its wards read one by one, as before. If the read fails, the wards keep what they show until the next refresh. A ward read on
+       its own whose read fails is taken from the council's read. */
+    var ALLW = {}, WARD_TOP = ['event_id', 'event_name', 'province_id', 'province_name', 'municipality_id', 'municipality_name'];
+    function wardsAll(key) { if (MUNIS[key]) ALLW[S.src + '|' + key] = 1; }
+    function wardsAllPrev(key) { if (MUNIS[key] && hasPrev()) ALLW[PREV + '|' + key] = 1; }
+    function wardRead(year, key, x, wardId) {
+      var base = '/' + year + '/provinces/' + encodeURIComponent(PROVS[x.pc]) + '/municipalities/' + x.id + '/wards', one = base + '/' + encodeURIComponent(wardId);
+      // the ward from the council's read of every ward: undefined where the feed has no such file, null where the ward isn't in it
+      function fromAll() {
+        return get(base).then(function (d) {
+          if (!d || !Array.isArray(d.ward_results)) return undefined;
+          if (!d._by) { d._by = {}; d.ward_results.forEach(function (w) { if (w && w.ward_id != null) d._by[String(w.ward_id)] = w; }); }
+          var e = d._by[String(wardId).replace(/\D/g, '')], o = {}, k;
+          if (!e) return null;
+          WARD_TOP.forEach(function (f) { if (d[f] != null) o[f] = d[f]; });   // the ward as its own read gives it: the council's fields, then its own
+          for (k in e) if (Object.prototype.hasOwnProperty.call(e, k)) o[k] = e[k];
+          return o;
+        });
+      }
+      if (ALLW[year + '|' + key]) return fromAll().then(function (w) { return w || get(one); });
+      // a ward on its own (Ward result, the ward box): its own read, and should that fail (on 6 November the feed answered 18 of
+      // Johannesburg's 135 wards with an error, though it had them in the council's read), the council's read of every ward
+      return get(one).then(null, function (err) { return fromAll().then(function (w) { if (!w) throw err; return w; }); });
+    }
     function ward(key, wardId) {
       var m = MUNIS[key];
       if (!m) return Promise.resolve(null);
       return province(m.p).then(function () {
         var x = IX[key];
         if (!x) return null;
-        return get('/' + S.src + '/provinces/' + encodeURIComponent(PROVS[x.pc]) + '/municipalities/' + x.id + '/wards/' + encodeURIComponent(wardId));
+        return wardRead(S.src, key, x, wardId);   // library v3.6: from the council's read of every ward, once the ward map has asked for it
       }).then(function (d) {
         if (d && S.sample) d = ballot26(simWard(d), key, wardId);
         return d && d.ward_id ? norm(d) : null;
@@ -6223,14 +6283,20 @@ guard("results", function () {
       if (!m || !hasPrev()) return Promise.resolve(null);
       return provincePrev(m.p).then(function () {
         var x = IXP[key];
-        return x ? get('/' + PREV + '/provinces/' + encodeURIComponent(PROVS[x.pc]) + '/municipalities/' + x.id + '/wards/' + encodeURIComponent(wardId)) : null;
+        return x ? wardRead(PREV, key, x, wardId) : null;   // library v3.6: see "a council's wards in one read"
       }).then(function (d) { return d && d.ward_id ? norm(d) : null; });
     }
     var subs = [];
     function on(fn) { subs.push(fn); }
     function emit() { subs.forEach(function (f) { try { f(); } catch (e) { if (window.console) console.error('[elections-hub] results update:', e); } }); }
-    var pollT = null;
-    function startPoll() { if (!pollT) pollT = setInterval(refresh, POLL); }
+    var pollT = null, missed = false;
+    /* ---- library v3.6 · while the tab is hidden ----
+       The timed read (every 5 minutes while the count is on, every 10 after it) waits while the tab is hidden: an article left open in a
+       background tab, a phone locked on it. It is skipped, and run once as soon as the tab is shown again, so a reader still sees figures as
+       fresh as before, and a page nobody is looking at no longer reads the feed. */
+    function tick() { if (document.hidden) { missed = true; return Promise.resolve(); } return refresh(); }
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && missed) { missed = false; refresh(); } });
+    function startPoll() { if (!pollT) pollT = setInterval(tick, POLL); }
     function refresh() {
       if (S.state === 'error') return retry().then(emit, emit);   // v23: the totals not read yet: try again now (see "trying again")
       if (S.sample || S.auto) return Promise.resolve();
@@ -6239,9 +6305,10 @@ guard("results", function () {
         if (S.state === 'final' && pollT) { clearInterval(pollT); pollT = null; }
         else if (S.state !== 'final' && !pollT) startPoll();   // v23: counting again (a count that had read complete): every 5 minutes once more
         if (S.autoPhase) rephase();
-        Object.keys(cache).forEach(function (u) { if (/\/municipalities\/[^/]+\/wards\//.test(u)) delete cache[u]; });
+        // the wards' results read again: each ward's own read and (library v3.6) a council's read of every ward, this election's (2021's stand)
+        Object.keys(cache).forEach(function (u) { if (u.indexOf(BASE + '/' + S.src + '/') === 0 && /\/municipalities\/[^/]+\/wards(\/|$)/.test(u)) delete cache[u]; });
         // v14: once the count is done, every province (the councils with seats); before that, the ones asked for (v23: a failed one too)
-        return Promise.all((S.state === 'final' ? PROV_ORDER : Object.keys(Object.assign({}, WANT, provP))).map(function (pc) { return province(pc, true).catch(function () {}); }));
+        return Promise.all((S.state === 'final' && ehxShows('allprov') ? PROV_ORDER : Object.keys(Object.assign({}, WANT, provP))).map(function (pc) { return province(pc, true).catch(function () {}); }));
       }).then(emit, emit);
     }
 
@@ -6795,7 +6862,9 @@ guard("results", function () {
     // (the feed's list is the IEC's certified list of 16 September, name for name): in the shape the ward box reads, { p: [[party,
     // abbreviation]], m: { key: { ward: [[party, name]] } } }, with the parties' abbreviations from the council's contesting parties
     // ({year}/parties) and a bilingual party name (VRYHEIDSFRONT PLUS | FREEDOM FRONT PLUS) by its English. null: no list.
-    function wardList(key, wn, wardId) {
+    // library v3.6: wardListFeed, until now wardList, the name of the ward's votes table above (render.wardList), which this declaration
+    // replaced: the Ward result graphics showed [object Promise] in place of the ward's votes by party and candidate
+    function wardListFeed(key, wn, wardId) {
       var id = String(wardId || '').replace(/\D/g, ''), ix = WIX[key] || [], pc = ix[0], code = ehFeedCode(ix[1]);
       if (S.sample || id.length !== 8) return Promise.resolve(null);
       var scope = PROVS[pc] && code ? '?province=' + encodeURIComponent(PROVS[pc]) + '&municipality=' + encodeURIComponent(code) : '';
@@ -7154,9 +7223,9 @@ guard("results", function () {
     window.DM_EH_COAL = function (k) { if (!k || !window.DM_EH_OPEN) return; CO.want = k; window.DM_EH_OPEN(k); };
 
     window.EH_RES = {
-      S: S, ready: ready, retry: retry, errMsg: errMsg, ERR_TXT: ERR_TXT, onPhase: onPhase, province: province, council: council, councilPrev: councilPrev, ward: ward, wardPrev: wardPrev, norm: norm, outcome: outcome, on: on, refresh: refresh,
+      S: S, ready: ready, retry: retry, errMsg: errMsg, ERR_TXT: ERR_TXT, onPhase: onPhase, province: province, council: council, councilPrev: councilPrev, ward: ward, wardPrev: wardPrev, wardsAll: wardsAll, wardsAllPrev: wardsAllPrev, tick: tick, norm: norm, outcome: outcome, on: on, refresh: refresh,
       IX: IX, IXP: IXP, natPrev: natPrev, provincePrev: provincePrev, hasPrev: hasPrev, PROV_ORDER: PROV_ORDER, PREV: PREV, GATE: GATE, seatsView: seatsView, hungOf: hungOf, drawn: drawn, deadline: deadline, dlStrip: dlStrip, setSample: setSample, setDay: setDay, setDec: setDec, dec: function () { return DEC; }, isDeclared: isDeclared, hasDeadline: function () { return !!String((ROOT && ROOT.getAttribute('data-deadline')) || '').trim(); }, hasPrev: hasPrev, pct: pct, int: int, short: short, declared: declared, decPct: decPct, shortName: shortName,
-      bySeats: bySeats, segs: segs, bar: bar, info: info, wait: wait, msg: msg, OTHERS: OTHERS, useNames: useNames, nameMatcher: nameMatcher, wardNames: wardNames, wardList: wardList, boardData: boardData,
+      bySeats: bySeats, segs: segs, bar: bar, info: info, wait: wait, msg: msg, OTHERS: OTHERS, useNames: useNames, nameMatcher: nameMatcher, wardNames: wardNames, wardList: wardListFeed, boardData: boardData,
       render: { councilBox: councilBox, declBox: declBox, councilBody: councilBody, fill: fill, hydrate: hydrate, chip: chip, wardBox: wardBox, wardList: wardList, shareTable: shareTable, srcLine: srcLine }
     };
   }());
@@ -7797,7 +7866,7 @@ guard("results across South Africa", function () {
     function cmBin(v) { for (var i = 0; i < TURN_BINS.length; i++) if (v < TURN_BINS[i][1]) return i; return TURN_BINS.length - 1; }
     // the map (from paintMap); false when the councils can't be drawn, so the dots stand
     function cmDraw(pc) {
-      if (started) { cmLoad(pc || ''); if (pc && cmFail[pc]) cmLoad(''); }
+      if (started && ehxShows('outlines')) { cmLoad(pc || ''); if (pc && cmFail[pc]) cmLoad(''); }   // library v3.6: in an embed, only where the map shows
       var set = (pc && cmSet[pc]) || cmSet[''] || null;
       if (!set && cmFail[''] && (!pc || cmFail[pc])) return false;
       var S = R$.S, turn = view.mode === 'turn', area = areaName(pc), fine = !!(pc && cmSet[pc]);
@@ -8163,7 +8232,7 @@ guard("results across South Africa", function () {
         paintMap();
       }, paint);
     }
-    function start() { if (started) return; started = true; load(); }
+    function start() { if (started || !ehxShows('councils')) return; started = true; load(); }   // library v3.6: in an embed, only for the graphics that show its councils
     paint();
     R$.ready().then(paint, paint);
     R$.on(function () { standKey = ''; paint(); });
@@ -8594,7 +8663,7 @@ guard("hung councils", function () {
   document.addEventListener('pointerdown', function (e) { if (HM.pin && !(HM.box && HM.box.contains(e.target))) hmPinOff(); }, true);   // v23.38: a touch off the map (library v3.1: or a click)
   document.addEventListener('keydown', function (e) { if (HM.pin && e.key === 'Escape') hmPinOff(); });   // library v3.1
   function start() {
-    if (started) return;
+    if (started || !ehxShows('hung')) return;   // library v3.6: in an embed, only in the Hung councils graphic (as its tab opens)
     started = true;
     R$.ready().then(function () {
       R$.PROV_ORDER.forEach(function (pc) { R$.province(pc).then(function () { done++; paint(); }, function () { done++; paint(); }); });
@@ -9197,9 +9266,13 @@ guard("change since 2021", function () {
     load();
   });
   // reading: the 2021 totals once, then the provinces of the area in both years (the whole country: all nine)
+  var loaded = false;
   function load() {
     if (!R$.hasPrev()) { paint(); return; }
-    var pc = A.get(), want = pc ? [pc] : R$.PROV_ORDER;
+    // library v3.6: an embed's first read is for its own area, which the hub may set from the anchor only after the tab opens (until then
+    // A.get() is South Africa, and a province's embed read all nine provinces of both elections and the whole country's outlines)
+    var pc = A.get() || (loaded ? '' : ehxArea()), want = pc ? [pc] : R$.PROV_ORDER;
+    loaded = true;
     R$.ready().then(function () {
       if (!nat21 && !natFail) R$.natPrev().then(function (d) { nat21 = d; natFail = !d; paint(); }, function () { natFail = true; paint(); });
       want.forEach(function (p) {
@@ -10612,6 +10685,7 @@ guard("municipality finder", function () {
       }
       function wmLoad(wm) {
         var t = ++wmTicket;
+        if (!ehxShows('wardmap')) wm = null;   // library v3.6: in an embed, the ward map only in Results by ward
         wmCur = null; wcP = null; wmPin = null;
         wmReset();   // back to Results by ward, no run
         WM_MAPS.forEach(function (M) { M.D = null; M.sel = null; M.lift = null; M.hov = null; M.hovN = ''; M.side = ''; M.sideN = null; M.named = ''; });
@@ -10719,13 +10793,14 @@ guard("municipality finder", function () {
         var res = cur.res = cur.res || { by: {}, any: false, done: false, cTurn: null, cReg: null, n: 0, got: 0 };
         res.done = false; res.n = q.length; res.got = 0;
         if (!q.length) { res.done = true; wmSrc(wmRes); return; }
+        if (R$.wardsAll) R$.wardsAll(cur.key);   // library v3.6: every ward in one read (see "a council's wards in one read" in "results")
         try { R$.council(cur.key).then(function (R) { if (t === wmResT && wmCur === cur) { res.cTurn = R ? R.turnout : null; res.cReg = R ? R.registered : null; wmSideRes(); } }, function () {}); } catch (e) {}
-        function take(n, R) {
+        function take(n, R, fail) {
           live--; done++;
           if (t !== wmResT || wmCur !== cur) return;
           res.got = done;
           if (done >= q.length) res.done = true;
-          wmPut(n, R);
+          if (!fail) wmPut(n, R);   // library v3.6: a read that fails leaves the ward as it stands, in its colour from the last read (if any)
           if (res.done || !(done % 8)) wmSrc(wmRes);
           if (!res.done) next();
         }
@@ -10734,7 +10809,7 @@ guard("municipality finder", function () {
             live++;
             var pr;
             try { pr = R$.ward(cur.key, wardId(cur.pre, n)); } catch (e) { pr = Promise.reject(e); }
-            Promise.resolve(pr).then(function (R) { take(n, R); }, function () { take(n, null); });
+            Promise.resolve(pr).then(function (R) { take(n, R); }, function () { take(n, null, true); });
           })(q[i++]);
         }
         next();
@@ -11125,6 +11200,7 @@ guard("municipality finder", function () {
       function wcRead(P) {
         var R$ = window.EH_RES, q = P.geo.wards.map(function (w) { return w.n; }), i = 0, live = 0;
         P.n = q.length;
+        if (R$.wardsAllPrev) R$.wardsAllPrev(P.key);   // library v3.6: 2021's wards in one read
         if (!q.length) { P.done = true; return; }
         function take(n, R) {
           live--;
