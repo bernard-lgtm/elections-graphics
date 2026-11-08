@@ -15,6 +15,7 @@
 
   /* ---- maps: the drawing's width from the room's height (its box is the flex item that takes what the key leaves) ---- */
   function fitMaps() {
+    if (g.id === 'turnprov') return;   // v3.12.4: the Explorer's map is sized by embed.css, beside the area's turnout
     $$('.res-map > .res-map-svg').forEach(function (box) {
       var svg = box.querySelector('svg'), vb = svg && svg.viewBox && svg.viewBox.baseVal, H = box.clientHeight, W = box.parentElement.clientWidth, val = '';
       if (!shown(box) || !vb || !vb.height || !vb.width || !H || !W) return;
@@ -63,8 +64,9 @@
     if (box.getAttribute('data-ehx-sc') !== fade) box.setAttribute('data-ehx-sc', fade);
     var r = box.getBoundingClientRect(), f = fill.getBoundingClientRect(), H = Math.round(r.height), th = Math.max(32, Math.round(H * box.clientHeight / box.scrollHeight));
     sb.style.top = Math.round(r.top - f.top - fill.clientTop + fill.scrollTop) + 'px';
-    var room = parseFloat(getComputedStyle(box).getPropertyValue('--ehx-room')) || 0;   // the box reaches past the list by this (embed-fit.css)
-    sb.style.left = Math.round(r.right - room - f.left - fill.clientLeft - 14) + 'px';
+    var cs = getComputedStyle(box), room = parseFloat(cs.getPropertyValue('--ehx-room')) || 0;   // the box reaches past the list by this (embed-fit.css)
+    var sbx = parseFloat(cs.getPropertyValue('--ehx-sbx'));   // the bar from the list's edge: in its gutter, or (--ehx-sbx, the Explorer) past it
+    sb.style.left = Math.round(r.right - room - f.left - fill.clientLeft + (isNaN(sbx) ? -14 : sbx)) + 'px';
     sb.style.height = H + 'px';
     o.th.style.height = th + 'px';
     o.th.style.transform = 'translateY(' + Math.round((H - th) * Math.min(1, st / Math.max(1, max))) + 'px)';
@@ -94,15 +96,29 @@
     }
     paintBar(o);
   }
+  /* v3.12.3 · Turnout by province, Explorer: the list scrolls in its box under the map; in a frame too short for the map, the area's figures
+     and three rows of the list, the whole graphic scrolls instead (.is-short), the list in it at its full length */
+  function expBox() {
+    var ex = $('.ehx-turn.is-exp'), lb = ex && ex.querySelector('.tx-lb');
+    if (!ex || !lb) return null;
+    var was = ex.classList.contains('is-short'), et = ex.getBoundingClientRect().top;
+    var need = lb.getBoundingClientRect().top - et + ex.scrollTop + 110, room = limit() - et, short = was ? need > room - 20 : need > room + 1;
+    if (short !== was) ex.classList.toggle('is-short', short);
+    var off = barFor(short ? lb : ex, false);
+    if (off) { off.sb.hidden = true; off.box.style.maxHeight = ''; off.box.removeAttribute('data-ehx-sc'); off.box.classList.remove('ehx-scroll'); if (!short) off.box.scrollTop = 0; bars = bars.filter(function (o) { return o !== off; }); off.sb.remove(); }
+    (short ? ex : lb).classList.add('ehx-scroll');
+    return short ? ex : lb;
+  }
   function fitLists() {
     // the hub's Show all parties (hidden here) pressed for it: every row in
-    if (g.id === 'votes' || g.ward) $$('.mf-res-more[aria-expanded="false"]').forEach(function (b) { b.click(); });
+    if (g.id === 'votes' || g.id === 'votescmp' || g.ward) $$('.mf-res-more[aria-expanded="false"]').forEach(function (b) { b.click(); });
     bars = bars.filter(function (o) { if (root.contains(o.box)) return true; o.sb.remove(); return false; });
     var boxes = $$('.res-board > .res-stand');
     if (g.id === 'table') boxes.push($('#res-tbl'));
     if (g.id === 'hung') boxes.push($('.hm-rest'));
-    if (g.id === 'votes') boxes.push($('.mf-res-tbl'));
-    if (g.id === 'seats') boxes.push($('.ehx-seats-b'));
+    if (g.id === 'votes' || g.id === 'votescmp') $$('.mf-res-tbl').forEach(function (b) { boxes.push(b); });   // v3.14: Votes by party: change since 2021, the hub's and 2021's (embed.js), one of them hidden
+    if (g.id === 'seats') boxes.push(seatsBox());
+    if (g.id === 'turnprov') boxes.push(expBox());
     if (g.ward) boxes.push($('#mf-wardpanel .wp-cands'));
     if (g.id === 'cmp' && /^(support|councils)$/.test(X.view || '')) boxes.push($('#eh-cmp-body'));
     boxes.forEach(scrollList);
@@ -221,13 +237,21 @@
      width. In a frame short of them (a code copied before the seats were in, or before v3.7) the list keeps the room of four rows and a half,
      the half circle drawn narrower, so lower, by what it takes, and the rows scroll (fitLists). With room to spare (the code is as tall as
      the article column or a phone needs, whichever needs more: on the other the graphic is a little shorter), the rows stand further apart,
-     up to 12px each (--ehx-rp, half of it over and half under each, embed.css), so there is no gap over the credit ---- */
-  var RP_MAX = 6;
+     up to 12px each (--ehx-rp, half of it over and half under each, embed.css), so there is no gap over the credit.
+     v3.13 · the code has room for six rows and a half at most (need, below), the rest scrolling in the box. A hung council's coalition mode
+     (the hub's, opened from the box's top right; embed.js): the half circle keeps its size and the rows their own height, the parties'
+     buttons come in under it in rows of as near the same number as the width allows (balance) and push the votes down, which take the
+     room left; where that is less than two rows and a half (a phone), the graphic scrolls as a whole instead, the votes at their full
+     length (seatsBox) ---- */
+  var RP_MAX = 6, SEATS_MIN = 2.5;
   function fitSeats() {
     var b = $('.mf-res-seats .mf-res-board'), stg = b && b.querySelector('.ehh-stage'), fig = stg && stg.parentElement, body = $('.ehx-seats-b'), row = body && body.firstElementChild, val = '', rp = 0;
+    var coal = $('.mf-res-seats.can-coal.is-coal'), cr = coal && coal.querySelector('.mf-coal-row');
     if (!b) return;
+    if (cr && shown(cr)) balance(cr);
     var cur = body ? parseFloat(body.style.getPropertyValue('--ehx-rp')) || 0 : 0, n = body ? body.children.length : 0;
-    if (stg && shown(stg) && row && shown(body)) {
+    if (coal) val = b.style.maxWidth;
+    else if (stg && shown(stg) && row && shown(body)) {
       var r = stg.getBoundingClientRect(), k = r.width ? r.height / r.width : 0, sb = b.parentElement, cs = getComputedStyle(sb);
       var m = /min\(100%,\s*([\d.]+)px\)/.exec(fig.getAttribute('style') || ''), own = Math.min(sb.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 12, m ? +m[1] : 600);
       var want = Math.min(body.scrollHeight - 2 * cur * n, Math.ceil((row.getBoundingClientRect().height - 2 * cur) * 4.5));
@@ -241,6 +265,21 @@
     }
     if (b.style.maxWidth !== val) b.style.maxWidth = val;
     if (body && cur !== rp) body.style.setProperty('--ehx-rp', rp + 'px');
+  }
+  // the box that scrolls: the votes' own, or in coalition mode, where the room left under the parties' buttons is short, the whole graphic
+  // (.mf-file-left.ehx-sall, its bar in the card's padding: embed-fit.css). The other one's bar taken off.
+  function seatsBox() {
+    var body = $('.ehx-seats-b'), wrap = body && body.closest('.mf-file-left'), row = body && body.firstElementChild;
+    if (!wrap) return body;
+    var was = wrap.classList.contains('ehx-sall'), all = false;
+    if (row && shown(body) && $('.mf-res-seats.can-coal.is-coal')) {
+      var room = limit() - body.getBoundingClientRect().top - (was ? wrap.scrollTop : 0), want = Math.min(body.scrollHeight, row.getBoundingClientRect().height * SEATS_MIN);
+      all = was ? room < want + 20 : room < want;
+    }
+    if (all !== was) wrap.classList.toggle('ehx-sall', all);
+    var off = barFor(all ? body : wrap, false);
+    if (off) { off.sb.hidden = true; off.box.style.maxHeight = ''; off.box.removeAttribute('data-ehx-sc'); off.box.classList.remove('ehx-scroll'); off.box.scrollTop = 0; bars = bars.filter(function (o) { return o !== off; }); off.sb.remove(); }
+    return all ? wrap : body;
   }
 
   function fitAll() {
@@ -262,12 +301,14 @@
     // set here: fitted at once, before the page is painted (a mutation observer runs before the next frame), so the new drawing never
     // shows at the full width first, nor a list with its first rows only; the rest a moment later
     new MutationObserver(function (ms) {
-      var hit = false, add = false;
-      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(t.closest && t.closest('.ehx-headrow, .ehx-coal, .ehx-note, .ehx-foot, .ehx-sb, .ehx-tog'))) { hit = true; if (ms[i].type === 'childList') add = true; } }
+      var hit = false, add = false, sync = false;
+      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(t.closest && t.closest('.ehx-headrow, .ehx-coal, .ehx-note, .ehx-foot, .ehx-sb, .ehx-tog'))) { hit = true; if (ms[i].type === 'childList') add = true; else if (t.classList && (t.classList.contains('mf-res-seats') || t.classList.contains('ehx-sback'))) sync = true; } }
       if (!hit) return;
       if (g.id === 'cmp') cmpSwitch();
       // a new row of parties (a live update): in its rows before it is painted
       if (add && g.id === 'coalition') { var cr = root.querySelector('.mf-res-seats .mf-coal-row'); if (cr && !cr.hasAttribute('data-ehx-bal')) fitCoal(); }
+      // Council seats: coalition mode opened or shut (the hub's classes, Back to results), or the seats written afresh in it: fitted at once
+      if (g.id === 'seats' && (sync || (add && root.querySelector('.mf-res-seats.is-coal .mf-coal-row:not([data-ehx-bal])')))) { fitAll(); soon(); return; }
       fitMaps();
       if (add) fitLists();
       soon();
@@ -293,13 +334,18 @@
     return box && shown(box) && vb && vb.width ? box.clientHeight - box.clientWidth * vb.height / vb.width : 0;
   }
   /* v3.7 · the frame's height the graphic needs, every party in it (library.js measures the code's height with it, in a frame taller than
-     that): the frame's height less the room the graphic leaves free in it (Council seats: less the room its rows were spread over too) */
+     that): the frame's height less the room the graphic leaves free in it (Council seats: less the room its rows were spread over too).
+     v3.13 · Council seats: six rows and a half at most (seven or fewer, every row), the rest scrolling in their box */
   function need() {
     if (!fill) return 0;
     fitAll();
     var inner = fill.firstElementChild, fs = getComputedStyle(fill), body = g.id === 'seats' ? root.querySelector('.ehx-seats-b') : null;
     var free = fill.clientHeight - parseFloat(fs.paddingTop) - parseFloat(fs.paddingBottom) - (inner ? inner.getBoundingClientRect().height : 0);
-    if (body) free += 2 * (parseFloat(body.style.getPropertyValue('--ehx-rp')) || 0) * body.children.length;
+    if (body) {
+      var rp = parseFloat(body.style.getPropertyValue('--ehx-rp')) || 0, rs = body.children, n = rs.length, a, z;
+      free += 2 * rp * n;
+      if (n > 7) { a = rs[6].getBoundingClientRect(); z = rs[n - 1].getBoundingClientRect(); free += z.bottom - (a.top + a.height / 2) - 2 * rp * (n - 6.5); }
+    }
     return Math.ceil(document.documentElement.clientHeight - Math.max(0, free) - (g.id === 'wards' ? wardsSpare() : 0));
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();

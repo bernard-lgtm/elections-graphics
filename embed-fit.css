@@ -45,6 +45,11 @@ html.ehx-fit #dm-eh{--ehx-room:22px}
 html.ehx-on.ehx-fit #dm-eh > .ehx-fill[class]{margin-left:calc(-1 * var(--ehx-room))!important;margin-right:calc(-1 * var(--ehx-room))!important;padding-left:var(--ehx-room)!important;padding-right:var(--ehx-room)!important}
 html.ehx-fit #dm-eh .ehx-fill .ehx-scroll{margin-left:calc(-1 * var(--ehx-room));margin-right:calc(-1 * var(--ehx-room));padding-left:var(--ehx-room);padding-right:var(--ehx-room)}
 html.ehx-fit #dm-eh .ehx-fill .ehx-scroll[data-ehx-sc]{padding-right:calc(var(--ehx-room) + 22px)}
+/* v3.13 · Council seats in coalition mode, where the room left under the parties' buttons is short (a phone): the graphic scrolls as a whole
+   (embed-fit.js: .ehx-sall), its bar in the card's padding, so nothing in it narrows as it comes and goes */
+html.ehx-fit[data-embed="seats"] #dm-eh .mf-file-left.ehx-sall{--ehx-sbx:4px}
+html.ehx-fit[data-embed="seats"] #dm-eh .mf-file-left.ehx-sall.ehx-scroll[data-ehx-sc]{padding-right:var(--ehx-room)}
+@media (max-width:480px){html.ehx-fit[data-embed="seats"] #dm-eh .mf-file-left.ehx-sall{--ehx-sbx:1px}}
 
 /* ---- South Africa and the provinces: the panel's column fills the room ----
    A map the hub draws afresh (it redraws its maps as the results come in) is never taller than its room, even before embed-fit.js has
@@ -61,6 +66,22 @@ html.ehx-fit #dm-eh .res-map > .res-map-head{flex:none;min-height:0}
 html.ehx-fit #dm-eh .res-map > .res-map-svg{flex:1 1 auto;min-height:0;width:100%;max-width:none;margin:0 auto;display:flex;align-items:center}
 html.ehx-fit #dm-eh .res-map > .res-map-svg > svg{width:100%;height:auto;max-height:100%}
 html.ehx-fit #dm-eh .hm-grid:not([hidden]) + .hm-rest{margin-top:0}
+/* v3.12 · Turnout by province: the Explorer takes the room under the title */
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn{flex:1 1 auto;min-height:0}
+/* v3.12.3 · Explorer: the list takes the room under the map, and scrolls in its box where it needs more (embed-fit.js) */
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-list{flex:1 1 auto;min-height:150px}
+/* a frame short of the graphic: the map gives up room (never under 120px), the list keeps three rows or more and scrolls */
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map .res-map-svg > svg{max-height:min(270px,max(120px,calc(100vh - 640px)))}
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb{min-height:110px}
+/* v3.12.5: the rows as wide as the line over them, the bar just past it (no gutter; embed-fit.js reads --ehx-sbx) */
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb{--ehx-sbx:0px}
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb.ehx-scroll{margin-right:calc(-1 * var(--ehx-room));padding-right:var(--ehx-room)}
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp.is-short > *,html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp.is-short .tx-lb{flex:none;min-height:0}
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp.is-short .tx-lb{max-height:none!important}
+/* a short list (South Africa's provinces, a small province's councils): the rows share the room, so none is left empty under them */
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb > li{flex:1 0 auto;display:flex;max-height:52px}
+html.ehx-fit[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb > li > .tx-r{flex:1 1 auto}
 /* a wide card (861px and up, the hub's own breakpoint): the map beside party support, the turnout key or the hung councils' figures, as on
    the hub; the map takes the room's whole height */
 @media (min-width:861px){

@@ -36,7 +36,7 @@
   function params(g) {
     var s = S[g.id], p = new URLSearchParams();
     p.set('embed', g.id);
-    if (g.group === 'area') { if (s.area) p.set('area', s.area); } else { p.set('muni', s.muni); if (g.ward) p.set('ward', s.ward); }
+    if (g.group === 'area') { if (s.area && areaOk(g)) p.set('area', s.area); } else { p.set('muni', s.muni); if (g.ward) p.set('ward', s.ward); }
     if (g.views && s.view !== g.views[0][0]) p.set('view', s.view);
     return p.toString();
   }
@@ -56,6 +56,8 @@
      lo on a phone, as tall as the width needs in between. fluid() gives [lo, hi], or null where there is one height. */
   var FLUID_W = 668;
   function fluid(g) { var a = g.fluid && AUTO[autoKey(g)]; return a && a.h && a.lo && a.lo < a.h ? [a.lo, a.h] : null; }
+  // the fluid graphic measured by its map (Results by ward); Council seats (v3.13) is measured by its rows
+  function byMap(g) { return !!g.fluid && g.id === 'wards'; }
   function sizeFrame(g, f) {
     var p = fluid(g), st = f.style;
     st.height = p ? 'auto' : codeH(g) + 'px'; st.aspectRatio = p ? FLUID_W + ' / ' + p[1] : ''; st.minHeight = p ? p[0] + 'px' : ''; st.maxHeight = p ? p[1] + 'px' : '';
@@ -154,12 +156,14 @@
       }).catch(function () { done(null); });
     }
   }
+  // v3.12 · an area to pick: every graphic of South Africa and the provinces, but in Turnout by province (natOnly) only its Explorer (areaViews)
+  function areaOk(g) { return !g.natOnly || !!(g.areaViews && g.areaViews.indexOf(S[g.id].view) >= 0); }
   function picks(g) {
     var s = S[g.id], h = '';
-    if (g.group === 'area') h += '<label><span class="lbl">Area</span><select data-k="area">' + PROV.filter(function (p) { return !(g.provOnly && !p[0]); }).map(function (p) { return '<option value="' + p[0] + '"' + (p[0] === s.area ? ' selected' : '') + '>' + esc(p[1]) + '</option>'; }).join('') + '</select></label>';
+    if (g.group === 'area') { if (areaOk(g)) h += '<label><span class="lbl">Area</span><select data-k="area">' + PROV.filter(function (p) { return !(g.provOnly && !p[0]); }).map(function (p) { return '<option value="' + p[0] + '"' + (p[0] === s.area ? ' selected' : '') + '>' + esc(p[1]) + '</option>'; }).join('') + '</select></label>'; }
     else { var mo = muniOpts(g); h += '<label><span class="lbl">Council</span><select data-k="muni"' + (mo[1] ? '' : ' disabled') + '>' + mo[0] + '</select></label>'; }
     if (g.ward) h += '<label><span class="lbl">Ward</span><select data-k="ward">' + wardOptions(s.muni, s.ward) + '</select></label>';
-    if (g.views) h += '<label><span class="lbl">View</span><span class="lib-seg">' + g.views.map(function (v) { return '<button type="button" data-view="' + v[0] + '"' + (v[0] === s.view ? ' class="is-on"' : '') + '>' + esc(v[1]) + '</button>'; }).join('') + '</span></label>';
+    if (g.views && g.views.length > 1) h += '<label><span class="lbl">View</span><span class="lib-seg">' + g.views.map(function (v) { return '<button type="button" data-view="' + v[0] + '"' + (v[0] === s.view ? ' class="is-on"' : '') + '>' + esc(v[1]) + '</button>'; }).join('') + '</span></label>';
     return h;
   }
   // the card: the graphic, and beside it the pickers with the big button under them (Copy embed code; or Download PNG, the still at
@@ -174,7 +178,7 @@
   }
   var CUR = null; // the graphic on the page: the only card, the only frame loading
   /* ---- v3.7 · a graphic with auto in graphics.js (Council seats, Coalition builder): the code is as tall as the graphic needs for the council
-     picked, every party in it. Measured when the council is picked, in hidden frames with the live results (as the code shows them), each
+     picked, every party in it (v3.13: Council seats, six of them and a half at most, the rest scrolling in their box). Measured when the council is picked, in hidden frames with the live results (as the code shows them), each
      taller than the graphic needs, which says how much of it it needs (EH_FIT.need, embed-fit.js): at the article column's width and a
      phone's, the larger of the two (aw in graphics.js: the Coalition builder a phone's alone, its half circle drawn as large as that room
      allows in the article column), rounded up to 10px; measured again after five minutes. Copy embed code waits for it the first time.
@@ -207,17 +211,17 @@
           (function wait() {
             var W = null, E = null; try { W = f.contentWindow; E = W.EH_EMBED; } catch (x) {}
             if (!E) { if (Date.now() - t0 > 25000) no(new Error('not loaded')); else setTimeout(wait, 150); return; }
-            E.ready(g.fluid ? 15000 : 25000).then(function (done) {
+            E.ready(byMap(g) ? 15000 : 25000).then(function (done) {
               var k = E.state().k, d = W.document, F = W.EH_FIT, wi, nr;
               /* Results by ward: measured once its map is drawn and the results are in, though the count's last wards may still be coming in
                  (the page then never settles); without the key's No result yet row, which goes once they are in */
-              if (g.fluid && F && k !== 'loading' && k !== 'error' && (wi = wardsIn(W)) >= 0) {
+              if (byMap(g) && F && k !== 'loading' && k !== 'error' && (wi = wardsIn(W)) >= 0) {
                 if (!wi) return ok({ h: 0, n: 0 });
                 nr = d.querySelector('.mf-wmap--res .mf-wm-pane.is-on .res-tkey tr.is-nr');
                 return ok({ h: F.need() - (nr ? nr.getBoundingClientRect().height : 0), n: 1 });
               }
-              if (!done || !F || k === 'loading' || k === 'error' || g.fluid) return no(new Error('not read'));
-              ok({ h: F.need(), n: d.querySelectorAll(g.id === 'coalition' ? '.mf-coal-row .mf-cp' : '.ehx-seats-b .ehx-seats-r').length });
+              if (!done || !F || k === 'loading' || k === 'error' || byMap(g)) return no(new Error('not read'));
+              ok({ h: F.need(), n: d.querySelectorAll(g.id === 'coalition' ? '.mf-coal-row .mf-cp' : '.ehx-seats-b .ehx-seats-r').length, hung: g.id === 'seats' && !!d.querySelector('.mf-res-seats.can-coal') });
             }, no);
           })();
         };
@@ -226,8 +230,11 @@
     }
     Promise.all((g.aw || AUTO_W).map(one)).then(function (r) {
       var n = r[0].n, h = Math.max.apply(null, r.map(function (x) { return x.h; })), cap = g.h || 760, hi;
-      if (g.fluid) AUTO[key] = r[0].n && r[1].n ? { h: hi = Math.min(cap, Math.floor(r[0].h / 10) * 10), lo: Math.min(hi, Math.floor(r[1].h / 10) * 10), n: 1, t: Date.now() } : { h: 0, none: true, t: Date.now() - AUTO_AGE + 30000 };
-      else AUTO[key] = n ? { h: Math.ceil(h / 10) * 10, n: n, t: Date.now() } : { h: 0, none: true, t: Date.now() };
+      if (byMap(g)) AUTO[key] = r[0].n && r[1].n ? { h: hi = Math.min(cap, Math.floor(r[0].h / 10) * 10), lo: Math.min(hi, Math.floor(r[1].h / 10) * 10), n: 1, t: Date.now() } : { h: 0, none: true, t: Date.now() - AUTO_AGE + 30000 };
+      // v3.13 · Council seats: the article column's height and a phone's, the code's height following its width between them (one height
+      // where a phone needs as much)
+      else if (g.fluid) AUTO[key] = n ? { h: hi = Math.ceil(h / 10) * 10, lo: Math.min(hi, Math.ceil(r[1].h / 10) * 10), n: n, hung: !!r[0].hung, t: Date.now() } : { h: 0, none: true, t: Date.now() };
+      else AUTO[key] = n ? { h: Math.ceil(h / 10) * 10, n: n, hung: !!r[0].hung, t: Date.now() } : { h: 0, none: true, t: Date.now() };
     }, function () {
       AUTO[key] = { h: 0, failed: true, t: Date.now() - AUTO_AGE + 30000 };   // tried again 30 seconds on, at the next pick
     }).then(function () {
@@ -240,11 +247,12 @@
     var b = el(g).querySelector('[data-act="code"]'), a = AUTO[autoKey(g)] || {}, nm = shortMuni(g), wait = !!a.busy && !a.h, hn = hungNote(g);
     b.disabled = wait; if (!b.classList.contains('is-done')) b.textContent = wait ? 'Measuring\u2026' : 'Copy embed code';
     if (hn) msg(g, hn);
-    else if (wait) msg(g, 'Measuring the graphic for ' + nm + ', so the code is as tall as ' + (g.fluid ? 'its map needs' : g.aw ? 'it needs' : 'its parties need') + '\u2026');
+    else if (wait) msg(g, 'Measuring the graphic for ' + nm + ', so the code is as tall as ' + (byMap(g) ? 'its map needs' : g.aw ? 'it needs' : 'its parties need') + '\u2026');
+    else if (a.h && g.id === 'seats') { var q = fluid(g); msg(g, 'The code is ' + (q ? q[1] + 'px high in the article column and ' + q[0] + 'px on a phone (its height follows its width)' : a.h + 'px high') + ': ' + (a.n > 7 ? 'the first six of ' + nm + '\u2019s ' + a.n + ' parties with seats show, and the rest scroll in their box.' : 'every one of ' + nm + '\u2019s ' + a.n + (a.n === 1 ? ' party' : ' parties') + ' with seats shows.') + (a.hung ? ' It is a hung council: readers can open the coalition builder in the graphic.' : '')); }
     else if (a.h && g.fluid) { var p = fluid(g); msg(g, p ? 'The code is ' + p[1] + 'px high in the article column and ' + p[0] + 'px on a phone (its height follows its width), so no room is left empty around ' + nm + '\u2019s map.' : 'The code is ' + a.h + 'px high, so no room is left empty around ' + nm + '\u2019s map in the article column or on a phone.'); }
     else if (a.h && g.aw) msg(g, 'The code is ' + a.h + 'px high, the height ' + nm + '\u2019s graphic needs on a phone. In the article column the half circle is drawn as large as that room allows.');
     else if (a.h) msg(g, 'The code is ' + a.h + 'px high, the height ' + nm + '\u2019s ' + a.n + (a.n === 1 ? ' party' : ' parties') + ' with seats need in the article column and on a phone.');
-    else if (a.none && g.fluid) msg(g, nm + '\u2019s ward results aren\u2019t in yet, so the code has the standard height (' + codeH(g) + 'px). Copy it again once they are, for the height its map needs.');
+    else if (a.none && byMap(g)) msg(g, nm + '\u2019s ward results aren\u2019t in yet, so the code has the standard height (' + codeH(g) + 'px). Copy it again once they are, for the height its map needs.');
     else if (a.none) msg(g, nm + '\u2019s seats aren\u2019t in yet, so the code has the standard height (' + codeH(g) + 'px). Copy it again once they are, for the height its parties need.');
     else if (a.failed) msg(g, 'The graphic could not be measured, so the code has the standard height (' + codeH(g) + 'px).', true);
   }
@@ -278,6 +286,7 @@
   }
   function setView(g, v) {
     S[g.id].view = v;
+    if (g.natOnly) el(g).querySelector('.g-pick').innerHTML = picks(g);   // the Area picker comes and goes with the view
     [].forEach.call(el(g).querySelectorAll('.g-pick [data-view]'), function (x) { x.classList.toggle('is-on', x.getAttribute('data-view') === v); });
     msg(g, ''); load(g);
   }
@@ -290,7 +299,7 @@
   function tileHtml(g, mode) {
     var cur = !page && CUR === g && UI.mode === mode, href = '#' + MODE[mode].hash + g.id;
     return '<li class="lib-nav-tile' + (cur ? ' is-current' : '') + '" data-id="' + g.id + '"><a class="lib-nav-a" href="' + href + '" data-id="' + g.id + '"' + (cur ? ' aria-current="true"' : '') + '><span class="lib-nav-img"><img src="' + esc(thumb(g, g.views ? g.views[0][0] : '')) + '" alt="" width="480" height="360" loading="lazy" decoding="async"></span><span class="lib-nav-name">' + esc(g.name) + '</span></a>' +
-      (g.views ? '<span class="lib-nav-views">' + g.views.map(function (v) { return '<a href="' + href + '" data-id="' + g.id + '" data-view="' + v[0] + '">' + esc(v[1]) + '</a>'; }).join('') + '</span>' : '') + '</li>';
+      (g.views && g.views.length > 1 ? '<span class="lib-nav-views">' + g.views.map(function (v) { return '<a href="' + href + '" data-id="' + g.id + '" data-view="' + v[0] + '">' + esc(v[1]) + '</a>'; }).join('') + '</span>' : '') + '</li>';
   }
   function panelHtml(mode) {
     return '<div class="lib-nav-in"><div class="lib-nav-hd"><div class="lib-nav-tl"><h2 class="lib-nav-title">' + esc(MODE[mode].name) + '</h2>' + (MODE[mode].only ? '<span class="lib-nav-only">' + esc(MODE[mode].only) + '</span>' : '') + '</div><p class="lib-nav-lead">' + esc(MODE[mode].lead) + '</p></div>' + groups.map(function (x) {

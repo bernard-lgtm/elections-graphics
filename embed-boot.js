@@ -22,6 +22,8 @@ window.__errs = []; window.addEventListener('error', function (e) { window.__err
   var view = '', v = String(q.get('view') || '').toLowerCase();
   if (v === 'turnout' && id === 'wards') v = 'turn';   // v1 links
   if (g.views) view = g.views.some(function (x) { return x[0] === v; }) ? v : g.views[0][0];
+  // v3.12 · South Africa with its provinces in one graphic (Turnout by province): no area, but in a view that opens on one (areaViews: its Explorer)
+  if (g.natOnly && !(g.areaViews && g.areaViews.indexOf(view) >= 0)) area = '';
   X.area = area; X.muni = muni; X.ward = ward; X.view = view;
   // Results by ward: the key under the map at every width, as on a phone (the hub's wmCols puts it beside the map from 600px up)
   X.wmStack = id === 'wards';

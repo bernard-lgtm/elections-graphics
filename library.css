@@ -42,6 +42,7 @@ button{font:inherit}
 .lib-mode{margin:52px 0 10px}.lib-mode + .lib-group{margin-top:0}
 .g-side{flex:0 0 240px;display:grid;gap:12px;align-content:start;min-width:0}
 .g-pick{display:flex;flex-direction:column;gap:12px}
+.g-pick:empty{display:none}
 .g-pick label{display:flex;flex-direction:column;gap:5px}
 .g-pick select{font:600 13px/1.2 var(--ui);color:var(--ink-1);height:34px;width:100%;padding:0 30px 0 10px;border:1px solid var(--ink-1);border-radius:0;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25l4 4 4-4' fill='none' stroke='%23171717' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;-webkit-appearance:none}
 .g-pick .lib-seg{padding:0 1px 1px 0}

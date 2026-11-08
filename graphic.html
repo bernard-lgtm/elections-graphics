@@ -7,11 +7,11 @@
 <title>Elections 2026 · Daily Maverick</title>
 <link rel="stylesheet" href="hub/elections-hub-post-v26.css?v=2">
 <style>@font-face{font-family:"DM Custom";src:url("fonts/DMCustomMar2026-V2-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}</style>
-<link rel="stylesheet" href="embed.css?v=34">
-<link rel="stylesheet" href="embed-fit.css?v=21">
+<link rel="stylesheet" href="embed.css?v=54">
+<link rel="stylesheet" href="embed-fit.css?v=33">
 <script src="config.js"></script>
-<script src="graphics.js?v=11"></script>
-<script src="embed-boot.js?v=6"></script>
+<script src="graphics.js?v=23"></script>
+<script src="embed-boot.js?v=8"></script>
 </head>
 <body>
 <!-- One graphic of the Elections Hub (post-elections v26), picked by the address: see README.md. The markup is the hub's (the municipality finder and the results tabs), without its mastheads, story feeds and buttons; embed.js adds the title, the count's progress and the credit around the graphic. -->
@@ -35,11 +35,11 @@
   if (C.deadline) r.setAttribute('data-deadline', C.deadline);
   if (C.votingDay) r.setAttribute('data-voting-day', C.votingDay);
   if (C.sittings && Object.keys(C.sittings).length) document.getElementById('eh-sittings').textContent = JSON.stringify(C.sittings);
-  document.write('<script src="hub/elections-hub-post-v26' + (X.build === 'preview' ? '-preview' : '') + '.js?v=6"><\/script>');
+  document.write('<script src="hub/elections-hub-post-v26' + (X.build === 'preview' ? '-preview' : '') + '.js?v=9"><\/script>');
 })();
 </script>
 <script src="export.js?v=2"></script>
-<script src="embed.js?v=26"></script>
-<script src="embed-fit.js?v=23"></script>
+<script src="embed.js?v=48"></script>
+<script src="embed-fit.js?v=34"></script>
 </body>
 </html>

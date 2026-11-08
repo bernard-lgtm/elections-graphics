@@ -24,6 +24,9 @@ html.ehx-on #dm-eh .ehx-tag[hidden]{display:none}
 html.ehx-on #dm-eh .ehx-head .k[hidden]{display:none}
 /* v3.7 · the Coalition builder: its title is the hub's question, Who can build a coalition in <council>?, in DM Custom with no kicker */
 html.ehx-on[data-embed="coalition"] #dm-eh .ehx-head .t{font-size:29px;line-height:1.1}
+/* v3.12.5 · Turnout by province: its title, Voter turnout, larger */
+html.ehx-on[data-embed="turnprov"] #dm-eh .ehx-head .t{font-size:50px;line-height:1.02}
+@media (max-width:480px){html.ehx-on[data-embed="turnprov"] #dm-eh .ehx-head .t{font-size:38px}}
 @media (max-width:480px){html.ehx-on[data-embed="coalition"] #dm-eh .ehx-head .t{font-size:21px;line-height:1.12}}
 
 /* where the count stands, in the hub's count box (post-elections v30: its masthead's three states, its results tabs' box). Counting in red,
@@ -38,6 +41,10 @@ html.ehx-on #dm-eh .ehx-status > .mf-decl.is-prov{background:#181818}
 html.ehx-on #dm-eh .ehx-status > .mf-decl.is-idle{background:#F2F2F2}
 html.ehx-on #dm-eh .ehx-status > .mf-decl.is-idle .st{color:#414343}
 html.ehx-on #dm-eh .ehx-status > .mf-decl.is-idle .sub{color:#6B6C6D}
+/* v3.14 · Votes by party: change since 2021 on 2021: that election's box in white, black type, a thin black outline (embed.js: .ehx-past) */
+html.ehx-on #dm-eh .ehx-status > .mf-decl.ehx-past{background:#fff;box-shadow:inset 0 0 0 1px #171717}
+html.ehx-on #dm-eh .ehx-status > .mf-decl.ehx-past :is(.st,.sub){color:#171717}
+html.ehx-on #dm-eh .ehx-status > .mf-decl.ehx-past .st i{background:#171717}
 /* phones: the title and the box side by side, half each (the hub's area dropdown and count box, v23). In the red box, compact: the status
    and the share on one line, the bar the box's full width under them, then the voting districts. Narrow phones: the line's type smaller */
 @media (max-width:480px){
@@ -85,6 +92,58 @@ html[data-embed="hung"][data-view="map"] #dm-eh .hm-rest{display:none!important}
 html[data-embed="hung"][data-view="list"] #dm-eh .hm-grid{display:none!important}
 html[data-embed="cmp"] #dm-eh #eh-cmp-body > :not([data-ehx="1"]){display:none!important}
 html[data-embed="cmp"] #dm-eh #eh-cmp-body > .cmp-sec{display:none!important}
+/* ---- v3.12 · Turnout by province (embed.js: paintTurn, paintExp; v3.12.7: the Explorer alone): none of the hub's panels show ---- */
+html[data-embed="turnprov"] #dm-eh .eh-tab-panel{display:none!important}
+html[data-embed="turnprov"] #dm-eh .ehx-turn{display:flex;flex-direction:column;font-family:Geist,"Helvetica Neue",Arial,sans-serif;color:#171717;font-variant-numeric:tabular-nums}
+/* v3.12.3 · Explorer (embed.js: paintExp; v3.12.4: on the hub's own councils map, #res-map, moved in): the election over the map, the area's
+   turnout beside it with the map's key under it, then a bar for each province or council in its band's colour (--bc). --nw: the names' column */
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp{--nw:120px;position:relative;display:flex;flex-direction:column;gap:14px}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs{flex:none;display:inline-flex;align-self:flex-start}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button{height:34px;margin:0 -1px 0 0;padding:0 16px;border:1px solid #171717;background:#fff;color:#171717;font:700 12.5px/1 Geist,"Helvetica Neue",Arial,sans-serif;letter-spacing:.02em;font-variant-numeric:tabular-nums;cursor:pointer}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button:first-child{border-radius:4px 0 0 4px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button:last-child{margin-right:0;border-radius:0 4px 4px 0}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button:only-child{border-radius:4px}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button:hover{background:#f1efea}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button[aria-pressed="true"]{background:#171717;color:#fff}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button:focus-visible,html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r.is-go:focus-visible{outline:2px solid #d33d3d;outline-offset:2px}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-top{flex:none;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-areas:"map sum";column-gap:28px;align-items:center}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map{grid-area:map;min-width:0;align-self:center}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map #res-map{margin:0}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map .res-map-svg{max-width:none;margin:0}
+/* v3.12.6: the magnifying glass back to South Africa at the map's top left (the hub has it at the right) */
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map #res-map > .res-map-head{right:auto;left:0}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map .res-zoom{margin:0 0 0 -6px}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map #res-map > .res-map-head:not(:empty) + .res-map-svg .res-loading{right:0}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-map .res-map-svg > svg{display:block;width:100%;height:auto;max-height:270px}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum{grid-area:sum;min-width:0}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum .an{margin:0 0 8px;font:700 34px/1.08 var(--font-display);color:#171717;letter-spacing:.005em;text-wrap:balance}
+/* the turnout, with the change since the election before beside it on two lines */
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb > b{font-size:44px;font-weight:700;line-height:1;letter-spacing:-.035em;color:#171717}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb .ch{display:flex;flex-direction:column;gap:2px;font-size:12.5px;line-height:1.2;color:#5e574e}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb .ch b{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#171717}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dl{margin:12px 0 0;padding:0;border-top:1px solid var(--dm-grey-1,#e3e3e3)}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dl > div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:6px 0;border-bottom:1px solid var(--dm-grey-1,#e3e3e3)}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dt{flex:none;font-size:12.5px;color:#5e574e}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dd{min-width:0;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dd span{font-weight:500}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-list{min-height:0;display:flex;flex-direction:column}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lh{flex:none;display:grid;grid-template-columns:var(--nw) minmax(0,1fr);column-gap:14px;padding:0 0 8px;border-bottom:2px solid #181818;font:600 13px/1.2 Geist,"Helvetica Neue",Arial,sans-serif;color:#414343}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb{margin:0;padding:0;list-style:none}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lb > li{margin:0;padding:0}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-note{margin:0;padding:14px 0;font-size:13px;color:#5e574e}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r{box-sizing:border-box;display:grid;grid-template-columns:var(--nw) minmax(0,1fr);column-gap:14px;align-items:center;width:100%;min-height:34px;margin:0;padding:6px 0;border:0;border-bottom:1px solid var(--dm-grey-1,#e3e3e3);background:none;font:inherit;color:#171717;text-align:left}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r.is-go{grid-template-columns:var(--nw) minmax(0,1fr) 14px;cursor:pointer;transition:background-color .15s}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r.is-go:hover{background:#f6f5f2}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r.is-go .go{color:#8f8a80}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r.is-go:hover .go{color:#171717}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;font-weight:600;line-height:1.25}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r .bw{display:flex;align-items:center;gap:8px;min-width:0}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r .bw i{flex:none;width:calc((100% - 62px) * var(--f,0));min-width:2px;height:14px;border-radius:3px;background:var(--bc,#3d6ea4);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),0 1.5px 1px rgba(23,23,23,.16)}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r .bw i[hidden]{display:none}
+html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r .bw b{font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r.is-go{transition:none}}
+@media (max-width:480px){html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp{gap:12px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs{align-self:stretch}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-yrs button{flex:1 1 0;padding:0 6px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-top{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:12px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum .an{margin-bottom:6px;font-size:24px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb{gap:4px 8px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb > b{font-size:30px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb .ch{font-size:11.5px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tb .ch b{font-size:13px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dl{margin-top:8px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dl > div{display:block;padding:4px 0}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dt{font-size:11px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-sum dd{text-align:left;font-size:12px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r .nm,html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r .bw b{font-size:13px}html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-r,html[data-embed="turnprov"] #dm-eh .ehx-turn.is-exp .tx-lh{column-gap:10px}}
+html[data-embed="turnprov"] #dm-eh .ehx-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
 /* ---- a council: the municipal file alone, without the search box ---- */
 html.ehx-muni #dm-eh .eh-tabs-sec{display:none!important}
@@ -101,7 +160,43 @@ html.ehx-muni #dm-eh .mf-file-left{max-width:none;width:auto}
 html.ehx-muni #dm-eh .mf-ward{padding-top:0!important;margin-top:0}
 html.ehx-muni #dm-eh .mf-file-banner{display:none!important}
 html[data-embed="seats"] #dm-eh .mf-res-tbl,html[data-embed="coalition"] #dm-eh .mf-res-tbl,html[data-embed="seats"] #dm-eh .mf-ward,html[data-embed="coalition"] #dm-eh .mf-ward{display:none!important}
-html[data-embed="votes"] #dm-eh .mf-res-seats,html[data-embed="votes"] #dm-eh .mf-ward{display:none!important}
+html:is([data-embed="votes"],[data-embed="votescmp"]) #dm-eh .mf-res-seats,html:is([data-embed="votes"],[data-embed="votescmp"]) #dm-eh .mf-ward{display:none!important}
+/* v3.14 · Votes by party: change since 2021 (votescmp). 2021 or 2026, a switch over the table (embed.js: .ehx-yrs, in the look of Turnout by
+   province's years), the table 14px under it in both years (the hub keeps 28px over its own, under its hidden seats). 2021's table in a box
+   of its own (.ehx-v21) after the hub's, which is hidden while 2021 shows (html.ehx-y21) */
+html[data-embed="votescmp"] #dm-eh .ehx-yrs{display:flex;margin:0 0 14px}
+html[data-embed="votescmp"] #dm-eh .ehx-yrs button{height:34px;margin:0 -1px 0 0;padding:0 16px;border:1px solid #171717;background:#fff;color:#171717;font:700 12.5px/1 Geist,"Helvetica Neue",Arial,sans-serif;letter-spacing:.02em;font-variant-numeric:tabular-nums;cursor:pointer}
+html[data-embed="votescmp"] #dm-eh .ehx-yrs button:first-child{border-radius:4px 0 0 4px}html[data-embed="votescmp"] #dm-eh .ehx-yrs button:last-child{margin-right:0;border-radius:0 4px 4px 0}
+html[data-embed="votescmp"] #dm-eh .ehx-yrs button:hover{background:#f1efea}
+html[data-embed="votescmp"] #dm-eh .ehx-yrs button[aria-pressed="true"]{background:#171717;color:#fff;cursor:default}
+html[data-embed="votescmp"] #dm-eh .ehx-yrs button:focus-visible{outline:2px solid #d33d3d;outline-offset:2px}
+html.ehx-yr[data-embed="votescmp"] #dm-eh .mf-res-tbl{margin-top:0}
+html.ehx-y21 #dm-eh #mf-res,html:not(.ehx-y21) #dm-eh .ehx-v21{display:none!important}
+html[data-embed="votescmp"] #dm-eh .ehx-v21{min-height:0}
+html[data-embed="votescmp"] #dm-eh .ehx-v21-msg{margin:0;padding:14px 0;font:400 13.5px/1.45 var(--font-ui);color:#5e574e;text-align:left;text-wrap:pretty}
+/* the change column after the share (embed.js: paintChg), in points: gains in green, losses in red, New for a party with no 2021 votes */
+html[data-embed="votescmp"] #dm-eh .mf-res-table .ehx-chg{width:1%;text-align:right;white-space:nowrap}
+html[data-embed="votescmp"] #dm-eh .mf-res-table td.ehx-chg{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums}
+html[data-embed="votescmp"] #dm-eh .ehx-chg .is-up{color:#17843A}
+html[data-embed="votescmp"] #dm-eh .ehx-chg .is-dn{color:#CA2828}
+html[data-embed="votescmp"] #dm-eh .ehx-chg .is-flat{font-weight:400;color:#6B6C6D}
+html[data-embed="votescmp"] #dm-eh .ehx-chg .is-new{font:700 10.5px/1 Archivo,"Helvetica Neue",Arial,sans-serif;font-stretch:87.5%;letter-spacing:.08em;text-transform:uppercase;color:#5e574e}
+/* a phone: five columns in the card's width. The party's name wraps, the cells closer together, the bar shorter */
+@media (max-width:480px){
+html[data-embed="votescmp"] #dm-eh .mf-res-table th.ehx-chg{white-space:normal}
+html[data-embed="votescmp"] #dm-eh .mf-res-table td.ehx-chg{font-size:13px}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table tbody th.p{white-space:normal;min-width:76px}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table .shs{display:none}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table tr:is(.is-open,.is-sel) .shs{display:flex;white-space:normal}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table .shs span{white-space:normal}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table :is(thead th,tbody th,tbody td){padding-left:3px;padding-right:3px}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table .pc{gap:6px}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table .shb{gap:6px}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table .shb strong{font-size:13px}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-tw{margin-left:0;margin-right:0;padding-left:0;padding-right:0}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table tbody .pn strong{font-size:13.5px}
+html[data-embed="votescmp"] #dm-eh .mf-res-tbl .mf-res-table td.v{font-size:12.5px}
+}
 html[data-embed="wards"] #dm-eh #mf-file-body,html[data-embed="wards"] #dm-eh .mf-ward > :not(.mf-wmap--res),html[data-embed="wards"] #dm-eh .mf-wm-tabs{display:none!important}
 html[data-embed="wards"] #dm-eh .mf-wm-panel{border:0;border-radius:0;padding:0 0 4px}
 /* the key under the map at every width (embed-boot.js X.wmStack): the view is fixed, so only its own facts take room, as on a phone */
@@ -170,7 +265,7 @@ html[data-embed="coalition"] #dm-eh .mf-seat-box.ehx-side > .mf-coal-row > .ehx-
 /* ---- no votes counted yet, or no answer from the feed: the count's box says so, the hub's own note under it would repeat it ---- */
 html.ehx-on[data-k="waiting"] #dm-eh .mf-res-msg,html.ehx-on[data-k="error"] #dm-eh .mf-res-msg,html.ehx-on[data-k="waiting"] #dm-eh #res-stand > .res-sub{display:none!important}
 /* Votes by party has nothing else to show before the count: the hub's note stays, so the card is not blank */
-html.ehx-on[data-k="waiting"][data-embed="votes"] #dm-eh .mf-res-msg{display:block!important;margin:4px 0 0;color:#6B6C6D}
+html.ehx-on[data-k="waiting"]:is([data-embed="votes"],[data-embed="votescmp"]) #dm-eh .mf-res-msg{display:block!important;margin:4px 0 0;color:#6B6C6D}
 html.ehx-on[data-k="waiting"] #dm-eh #mf-res,html.ehx-on[data-k="error"] #dm-eh #mf-res{min-height:0!important}
 
 /* ---- while an image is taken: no controls that do nothing on paper ---- */
@@ -254,14 +349,29 @@ html.ehx-still #dm-eh .eh-hung-hd > span:nth-child(4)::after{content:"Short";fon
 html.ehx-still #dm-eh .eh-cmp-body > .res-grid.cmp-maps{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:0;align-items:start}
 html.ehx-still #dm-eh .cmp-maps > .cmp-map > .res-map-head{margin-top:2px!important}
 }
-/* ---- Council seats: the box with its status tag (Provisional, Declared) and the council's half circle, none of the coalition builder (Who
-   can build a coalition in <council>?, the Hung council banner); under it every party with seats, its votes and its seats (embed.js), as
-   wide as the half circle at its widest. The embed code is as tall as they need (library.js, v3.7); in a frame short of them they scroll under
-   their headings (embed-fit.js); in a still graphic every row shows ---- */
-html[data-embed="seats"] #dm-eh .mf-cb-side,html[data-embed="seats"] #dm-eh .eh-dl,html[data-embed="seats"] #dm-eh .mf-coal-row{display:none!important}
+/* ---- Council seats: the box with its status tag (Provisional, Declared) and the council's half circle, no Hung council banner; under it every
+   party with seats, its votes and its seats (embed.js), as wide as the half circle at its widest. The embed code is as tall as six of them
+   and a half need (library.js, v3.13); the rest scroll under their headings (embed-fit.js); in a still graphic every row shows ---- */
+html[data-embed="seats"] #dm-eh .eh-dl{display:none!important}
 html[data-embed="seats"] #dm-eh .eh-dl + .mf-seat-box{margin-top:0}
-/* the hub keeps room over a hung council's half circle on a phone for the Majority flag of a coalition; there is no coalition here */
-html[data-embed="seats"] #dm-eh .mf-seat-box .mf-res-board.can-coal .ehh-stage{margin-top:0!important}
+/* v3.13 · a hung council: the hub's Who can build a coalition in <council>? at the box's top right opens its coalition mode in the graphic:
+   the parties' buttons under the half circle (in balanced rows, embed-fit.js), Back to results over the box on the left (embed.js:
+   .ehx-sback, in the hub's look; the hub's own, under the question, hidden), and the button that clears the coalition under the question.
+   Not in a still graphic */
+html[data-embed="seats"] #dm-eh .mf-cb-side .mf-coal-back,html.ehx-still[data-embed="seats"] #dm-eh .mf-cb-side{display:none!important}
+html[data-embed="seats"] #dm-eh .mf-cb-side .mf-cb-clr{top:calc(100% + 2px)}
+html[data-embed="seats"] #dm-eh .ehx-sback{display:flex;justify-content:flex-start;margin:0 0 10px}
+html[data-embed="seats"] #dm-eh .ehx-sback[hidden]{display:none}
+html[data-embed="seats"] #dm-eh .ehx-sback > .mf-cb-go{position:relative;gap:7px;margin:0;padding:7px 12px 6px;font-size:11px;animation:mf-coal-in .32s cubic-bezier(.2,.9,.3,1.2) both}
+html[data-embed="seats"] #dm-eh .ehx-sback > .mf-cb-go::before{content:"";position:absolute;inset:-8px -6px}
+html[data-embed="seats"] #dm-eh .ehx-sback > .mf-cb-go .arr{font-size:14px;margin-top:-1px}
+@media (prefers-reduced-motion:reduce){html[data-embed="seats"] #dm-eh .ehx-sback > .mf-cb-go{animation:none}}
+html[data-embed="seats"] #dm-eh .mf-coal-row{--ehx-rg:12px}
+@media (max-width:640px){html[data-embed="seats"] #dm-eh .mf-coal-row{--ehx-rg:10px}}
+html[data-embed="seats"] #dm-eh .mf-coal-row[data-ehx-bal]{row-gap:0}
+html[data-embed="seats"] #dm-eh .mf-coal-row > .ehx-br{flex:0 0 100%;height:var(--ehx-rg);margin:0;padding:0}
+/* the hub keeps room over a hung council's half circle on a phone for the Majority flag of a coalition: here only in coalition mode */
+html[data-embed="seats"] #dm-eh .mf-res-seats:not(.is-coal) .mf-seat-box .mf-res-board.can-coal .ehh-stage{margin-top:0!important}
 html[data-embed="seats"] #dm-eh .ehx-seats{--sx:154px;max-width:640px;margin:16px auto 0;text-align:left;font-family:Geist,"Helvetica Neue",Arial,sans-serif;font-size:14.5px;line-height:1.3;color:#171717;font-variant-numeric:tabular-nums}
 /* v3.7 · four columns: the party, its votes as a bar split by ballot with the figures under it, its votes, its seats. The party, the votes
    and the seats stand on the bar's line; the figures run on under the votes and the seats where they need the room (--sx: those columns and

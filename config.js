@@ -6,8 +6,8 @@ window.EHX_CONFIG = {
      true:  every embed shows Results declared in the green box, with the day in declaredOn under it; the seats read Declared and the
             links open declaredUrl. To flick it: change false to true and publish this file (on GitHub: config.js, the pencil, edit,
             Commit changes). Embeds pick it up as they load, within about 10 minutes of publishing (GitHub Pages keeps a copy that long). */
-  resultsDeclared: false,
-  declaredOn: '2026-11-07',   // YYYY-MM-DD: the day in the green box (Saturday 7 November 2026). Change it if the declaration falls on another day
+  resultsDeclared: true,
+  declaredOn: '2026-11-08',   // YYYY-MM-DD: the day in the green box (Sunday 8 November 2026). Change it if the declaration falls on another day
 
   /* The address this folder is published at, ending in a slash. Embed codes and links point here whenever the library is opened from
      somewhere else (a local copy or a preview). On the published site the library uses its own address, so this only has to be right

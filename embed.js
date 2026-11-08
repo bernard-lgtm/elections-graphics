@@ -27,6 +27,8 @@
     else { var m = muniOf(st.muni); t = m ? shortName(st.muni) : st.muni; if (g.ward && st.ward) t += '\u00a0\u00b7 Ward ' + st.ward; }
     // v3.7 · the Coalition builder's title is the hub's own question (its button in the council's box), with no kicker over it
     if (g.id === 'coalition') return { kicker: '', title: 'Who can build a coalition in ' + t + '?' };
+    // v3.12 · Turnout by province: no kicker; its title, Voter turnout
+    if (g.id === 'turnprov') return { kicker: '', title: 'Voter turnout' };
     return { kicker: k, title: t };
   }
   function hubAnchor() {
@@ -38,7 +40,7 @@
   // (declaredUrl), if set (not for the 2021 figures)
   function clean(u) { return String(u || '').replace(/#.*$/, ''); }
   var HUB = clean(C.hubUrl || 'https://www.dailymaverick.co.za/local-elections-results-2026/'), HUB_D = clean(C.declaredUrl);
-  function hubBase() { if (!HUB_D) return HUB; var s = state(); return s.k === 'final' && !s.past ? HUB_D : HUB; }
+  function hubBase() { if (!HUB_D) return HUB; var s = state(); return (s.k === 'final' || s.held) && !s.past ? HUB_D : HUB; }
   function hubLink(a) { return hubBase() + (a ? '#' + a : ''); }
   function hubShort() { return hubBase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/+$/, ''); }
   function dayNo(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').trim()); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; }
@@ -64,15 +66,18 @@
     var pc = areaNow();
     return pc ? (window.EH_AREA && EH_AREA.provR ? EH_AREA.provR(pc) : null) : R.norm(R.S.nat);
   }
+  // v3.15: a council the hub holds provisional after the declaration (HOLD in the hub's script): its graphics and its wards' keep the count's
+  // box (Counting, or Count complete) until its own count is complete; their links still open the results declared page
+  function held() { var R = R$(), x = !nat && st.muni && R && R.IX && R.IX[st.muni]; return !!(x && x.e && R.S && R.S.phase === 'final' && R.norm(x.e).held); }
   function state() {
     var R = R$(), S = R && R.S;
     if (!S || S.state === 'loading') return { k: 'loading' };
     if (S.state === 'error') return { k: 'error' };
-    var P = placeR(), past = !S.sample && String(S.src) !== String(($('dm-eh') && $('dm-eh').getAttribute('data-year')) || '2026');
-    if (S.phase === 'final' || past) return { k: 'final', R: P, past: past };
+    var P = placeR(), past = !S.sample && String(S.src) !== String(($('dm-eh') && $('dm-eh').getAttribute('data-year')) || '2026'), hold = !past && held();
+    if ((S.phase === 'final' && !hold) || past) return { k: 'final', R: P, past: past };
     var done = S.phase === 'provisional' || (P && P.vdCount > 0 && (P.complete || P.vdCaptured >= P.vdCount));
-    if (done) return { k: 'complete', R: P };
-    if (P && P.vdCaptured > 0) return { k: 'counting', R: P, pct: R.declared ? R.declared(P) : P.vdCaptured / P.vdCount * 100 };
+    if (done) return { k: 'complete', R: P, held: hold };
+    if (P && P.vdCaptured > 0) return { k: 'counting', R: P, pct: R.declared ? R.declared(P) : P.vdCaptured / P.vdCount * 100, held: hold };
     if (!nat && !P && S.state !== 'waiting') return { k: 'loading' };   // the council's figures come with its province, a moment later
     return { k: 'waiting', R: P };
   }
@@ -105,7 +110,8 @@
   }
   var statHtml = '';
   function paintStatus() {
-    var s = state(), R = R$(), S = R && R.S, html = box(s), h = document.documentElement;
+    var s = state(), R = R$(), S = R && R.S, html = box(yr21() ? { k: 'final', past: true } : s), h = document.documentElement;   // v3.14: Votes by party on 2021, that election's box
+    if (yr21()) html = html.replace('ehx-done is-done', 'ehx-done is-done ehx-past');   // in white with a black outline: only this election's box is in colour
     if (html !== statHtml) {
       var cur = stat.firstElementChild, tmp = document.createElement('div');
       tmp.innerHTML = html;
@@ -174,7 +180,7 @@
   }
   function cutLists() {
     var tb;
-    if (g.id === 'votes' && (tb = root.querySelector('.mf-res-tbl .mf-res-table tbody'))) {
+    if ((g.id === 'votes' || g.id === 'votescmp') && (tb = root.querySelector('.mf-res-tbl .mf-res-table tbody'))) {
       var seat = function (tr) { var c = tr.cells[tr.cells.length - 1], s = c && c.querySelector('strong'); return !!s && num(s.textContent) > 0; };
       var any = [].some.call(tb.rows, function (tr) { return !tr.classList.contains('ehx-oth') && seat(tr); });
       groupRows(tb, function (tr, i) { return any ? seat(tr) : i < TOP; }, 'parties', true);
@@ -222,6 +228,303 @@
     if (key !== seatsKey) { el.querySelector('.ehx-seats-h .k').innerHTML = key; seatsKey = key; }
     if (html !== seatsHtml) { el.lastChild.innerHTML = html; seatsHtml = html; }
   }
+  /* ---- v3.13 · Council seats, a hung council: the hub's Who can build a coalition in <council>? at the box's top right opens its coalition
+     mode in the graphic (the half circle empties, the parties' buttons come in under it and push the votes down), and Back to results stands
+     over the box, on the left. It presses the hub's own back button (hidden here), which leads back to the seats. Outside the hub's results,
+     so its live updates leave it in place. ---- */
+  var sback = null;
+  function paintSback() {
+    if (!sback) return;
+    var res = $('mf-res'), on = !!(res && res.querySelector('.mf-res-seats.can-coal.is-coal'));
+    if (res && sback.nextElementSibling !== res) res.parentNode.insertBefore(sback, res);
+    if (sback.hidden !== !on) sback.hidden = !on;
+  }
+  /* ---- v3.14 · Votes by party: change since 2021 (embed=votescmp). A switch over the table, 2021 or 2026 (interactive only; none where the page
+     itself shows 2021, the preview's 2021 figures). 2021: the council's 2021 result in the hub's own table (render.tableSec), in a box of its own after the hub's (.ehx-v21),
+     the hub's hidden while it shows (html.ehx-y21), so the hub's live updates leave both in place. Read as the graphic loads, for the change
+     column (paintChg): the hub's councilPrev, the province's 2021 results (/local/2021/provinces/{Province}), once
+     for the visit; where the read fails, again 30 seconds on. The count's box follows the year on show (2021: Results declared, 4 November 2021). ---- */
+  var YR = { y: '', el: null, box: null, P: null, tbl: '', busy: false, t: 0, none: false, html: null };
+  function yrData() { var R = R$(); return g.id === 'votescmp' && !!(R && R.S && R.hasPrev && R.hasPrev() && R.councilPrev); }
+  function yrCan() { var R = R$(); return yrData() && !X.still && !!(R.render && R.render.tableSec); }
+  function yrPrev() { var R = R$(); return String((R && R.PREV) || '2021'); }
+  function yr21() { return !!YR.y && YR.y === yrPrev() && yrCan(); }
+  function yrLater() { if (window.__ehxLater) window.__ehxLater(); }
+  function yrRead() {
+    var R = R$(), key = st.muni;
+    if (!yrData() || YR.P || YR.none || YR.busy || Date.now() - YR.t < 30000) return;
+    YR.busy = true;
+    R.councilPrev(key).then(function (P) {
+      YR.busy = false; YR.t = Date.now();
+      if (P) YR.P = P;
+      else {
+        // the province read without the council in it (none), or the read failed: tried again 30 seconds on
+        var x = R.IX && R.IX[key], m = muniOf(key), pc = (x && x.pc) || (m && m.p), IXP = R.IXP || {}, k;
+        for (k in IXP) if (IXP[k] && IXP[k].pc === pc) { YR.none = true; break; }
+        if (!YR.none) setTimeout(yrLater, 30500);
+      }
+      yrLater();
+    });
+  }
+  function yrBuild() {
+    var el = document.createElement('div'), now = String(R$().S.year), prev = yrPrev();
+    el.className = 'ehx-yrs'; el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Election');
+    el.innerHTML = '<button type="button" data-y="' + prev + '" aria-pressed="false">' + prev + '</button><button type="button" data-y="' + now + '" aria-pressed="true">' + now + '</button>';
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-y]'), y = b && b.getAttribute('data-y');
+      if (!y || y === (YR.y || now)) return;
+      YR.y = y === now ? '' : y;
+      paintYr(); paintStatus(); paintBallots();
+      if (window.EH_FIT && EH_FIT.fit) EH_FIT.fit();
+      yrLater();
+    });
+    return el;
+  }
+  function paintYr() {
+    var R = R$(), res = $('mf-res'), h = document.documentElement, can = yrCan() && !!res, on = can && yr21();
+    var el = YR.el && YR.el.isConnected ? YR.el : null, box = YR.box && YR.box.isConnected ? YR.box : null;
+    if (h.classList.contains('ehx-yr') !== can) h.classList.toggle('ehx-yr', can);
+    if (h.classList.contains('ehx-y21') !== on) h.classList.toggle('ehx-y21', on);
+    if (!can) { if (el) el.remove(); if (box) box.remove(); return; }
+    if (!el) el = YR.el = yrBuild();
+    if (el.nextElementSibling !== res) res.parentNode.insertBefore(el, res);
+    if (!box) { box = YR.box = document.createElement('div'); box.className = 'mf-res ehx-v21'; YR.html = null; }
+    if (box.previousElementSibling !== res) res.parentNode.insertBefore(box, res.nextSibling);
+    var cur = YR.y || String(R.S.year);
+    [].forEach.call(el.children, function (b) { var p = String(b.getAttribute('data-y') === cur); if (b.getAttribute('aria-pressed') !== p) b.setAttribute('aria-pressed', p); });
+    if (!on) return;
+    yrRead();
+    var y = yrPrev(), no = '<p class="ehx-v21-msg">No ' + y + ' result for this council.</p>';
+    if (YR.P && !YR.tbl) YR.tbl = R.render.tableSec(YR.P) || no;
+    var html = YR.tbl || (YR.none ? no : YR.busy ? R.wait() : '<p class="ehx-v21-msg">The ' + y + ' results could not be read. The graphic tries again by itself.</p>');
+    if (html !== YR.html) { box.innerHTML = html; YR.html = html; }
+  }
+  /* ---- v3.14 · the change column, after the share in the hub's 2026 table: each party's share now less its share in 2021 (matched by its short
+     name, as the hub's Change since 2021 matches them), in percentage points, gains in green and losses in red; a party with no votes in
+     2021, New. Added each time the hub writes its table, at once (before it is painted: the observer in boot), and to a still graphic's
+     Others row (its parties together). Empty while 2021 is read; a dash where the council has no 2021 result. ---- */
+  function chgTxt(d) {
+    var a = Math.abs(d), s = (Math.round(a * 10) / 10).toFixed(1).replace('.', ','), u = '<span class="vh"> points</span>';
+    return a < 0.05 ? '<span class="is-flat">\u00b10,0' + u + '</span>' : '<span class="' + (d > 0 ? 'is-up' : 'is-dn') + '">' + (d > 0 ? '+' : '\u2212') + s + u + '</span>';
+  }
+  function chgOf(tr, A, B) {
+    if (tr.classList.contains('ehx-oth')) {
+      var a = 0, b = 0, any = false;
+      [].forEach.call(tr.parentNode.querySelectorAll(':scope > tr.ehx-cut .pn strong'), function (s) { var k = s.textContent.trim(); if (B[k] != null) { b += B[k]; any = true; } if (A[k] != null) a += A[k]; });
+      return any ? chgTxt(b - a) : '';
+    }
+    var el = tr.querySelector('.pn strong'), k = el ? el.textContent.trim() : '';
+    if (B[k] == null) return '';
+    return A[k] == null ? '<span class="is-new">New</span>' : chgTxt(B[k] - A[k]);
+  }
+  function paintChg() {
+    if (g.id !== 'votescmp' || !root) return;
+    yrRead();
+    var t = root.querySelector('#mf-res .mf-res-tbl .mf-res-table'), hr = t && t.tHead && t.tHead.rows[0], tb = t && t.tBodies[0];
+    if (!hr || !tb) return;
+    var P = placeR(), A = null, B = {};
+    if (YR.P) { A = {}; YR.P.parties.forEach(function (p) { if (p.votes > 0) A[p.label] = (A[p.label] || 0) + (p.pct || 0); }); }
+    if (P) P.parties.forEach(function (p) { if (p.votes > 0) B[p.label] = (B[p.label] || 0) + (p.pct || 0); });
+    function cell(tr, tag) {
+      var c = tr.querySelector(':scope > .ehx-chg');
+      if (!c) { c = document.createElement(tag); c.className = 'n ehx-chg'; var sh = tr.querySelector(':scope > .sh'); tr.insertBefore(c, sh ? sh.nextSibling : null); }
+      return c;
+    }
+    var th = cell(hr, 'th');
+    if (!th.hasAttribute('scope')) { th.setAttribute('scope', 'col'); th.textContent = 'Since ' + yrPrev(); }
+    [].forEach.call(tb.rows, function (tr) {
+      var c = cell(tr, 'td'), html = A ? chgOf(tr, A, B) : YR.none ? '<span class="na">\u2013</span>' : '';
+      if (c._ehx !== html) { c.innerHTML = html; c._ehx = html; }
+    });
+  }
+  /* ---- v3.12 · Turnout by province (v3.12.7: the Explorer alone; Columns, Bars and Pies taken out). The national totals with each
+     province's at the last four local elections: this election's the hub's own (its read of the national totals, again every 5 minutes
+     while the count is on); the three before read once from the same service (/local/2021, /local/2016, /local/2011), and again 30
+     seconds on where a read fails. The figure is the feed's percent_voter_turnout, as the hub shows it: none until a voting district is in.
+     A still graphic (2021 results) shows the elections up to its own. ---- */
+  var TP_ALL = ['2026', '2021', '2016', '2011'], tpPast = {};
+  function tpYears() { var R = R$(), y = +((R && R.S && R.S.year) || 2026); return TP_ALL.filter(function (x) { return +x <= y; }); }
+  function tpBase() { var r = $('dm-eh'); return String((r && r.getAttribute('data-results')) || 'https://iec-api.revengine.dailymaverick.co.za/local').trim().replace(/\/+$/, ''); }
+  function tpRead(y) {
+    var o = tpPast[y];
+    if (o && (o.d || o.busy || Date.now() - o.t < 30000)) return;
+    o = tpPast[y] = { busy: true, t: 0, d: null, n: (o ? o.n : 0) + 1 };
+    var ac = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 20000);
+    fetch(tpBase() + '/' + y, ac ? { signal: ac.signal } : undefined)
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { if (d && d.provincial_results) o.d = d; }, function () {})
+      .then(function () {
+        clearTimeout(to); o.busy = false; o.t = Date.now();
+        if (!o.d) setTimeout(function () { if (window.__ehxLater) window.__ehxLater(); }, 30500);
+        if (window.__ehxLater) window.__ehxLater();
+      });
+  }
+  // the earlier elections' first reads still out (a read tried again after a failure is not waited for)
+  function tpWait() { return tpYears().slice(1).some(function (y) { var o = tpPast[y]; return !o || (o.busy && o.n < 2); }); }
+  function tpOf(d, pc) { if (d && pc) { var nm = (window.SA_PROVINCES || {})[pc] || PV[pc]; d = (d.provincial_results || []).filter(function (p) { return p.province_name === nm; })[0]; } return d || null; }
+  function tpVal(d, pc) {
+    d = tpOf(d, pc);
+    var v = d && d.percent_voter_turnout != null && d.percent_voter_turnout !== '' && +d.vd_captured > 0 ? +d.percent_voter_turnout : NaN;
+    return isFinite(v) ? v : null;
+  }
+  function tpReg(d, pc) { d = tpOf(d, pc); var n = d ? +d.registered_voters : 0; return n > 0 ? n : 0; }
+  function tpPct(v) { var R = R$(); return R && R.pct ? R.pct(v) : (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + '%'; }
+  function andList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+  function tpNote() {
+    var s = state(), ys = tpYears(), bad = ys.slice(1).filter(function (y) { var o = tpPast[y]; return o && !o.d && !o.busy; }).reverse();
+    // the count's note only while the graphic shows this election
+    var now = tmYear() === ys[0];
+    var t = !now ? '' : s.k === 'counting' ? 'The ' + ys[0] + ' figures are the count so far.' : s.k === 'waiting' ? 'The ' + ys[0] + ' figures show here once the count begins.' : '';
+    if (bad.length) t += (t ? ' ' : '') + 'The ' + andList(bad) + ' figures could not be read. The graphic tries again by itself.';
+    return t;
+  }
+  /* ---- v3.12.3 · Explorer (v3.12.4: on the hub's own map; v3.12.7: the graphic's one view). Over it the election (2011 to 2026); under that the hub's
+     councils map by turnout (#res-map, moved here from the Turnout tab the embed opens on: the province under the pointer rises, a click
+     opens it with its councils, the magnifying glass goes back to South Africa, a council clicked has Go to municipality), with the area's
+     turnout beside it (the change since the election before, the registered voters, the highest and the lowest) and the councils in each
+     band of turnout, as the map colours them; under them a bar for each province of South Africa (a row opens it) or each council of the
+     province, the highest first, in its band's colour. This election in the hub's blues; an election before in greys on the same map
+     (window.EHX_TURN, the hub's ehxTurn): each 2026 council in the colour of the council with its code at that election, where there is
+     one (boundaries and names changed in 2016: a council made since has none). The elections before are read from the service
+     (/local/{year}/provinces/{Province}, the nine provinces, as an election is picked; 30 s, then tried again). ---- */
+  var TB = [[40, 'Under 40'], [50, '40\u201350'], [60, '50\u201360'], [70, '60\u201370'], [101, '70 or more']];
+  var TP_BLUE = ['#e0ebf7', '#a6c1dd', '#6d98c3', '#3d6ea4', '#1f4778'], TP_GREY = ['#efece6', '#d3cec4', '#b0aa9e', '#8a8478', '#5f5a51'];
+  var TM = { y: '', cur: {}, curK: {}, past: {}, el: null, keys: {}, sig: null, idx: {}, nrm: {} };
+  function tmProvs() { var R = R$(); return (R && R.PROV_ORDER) || ['GP', 'WC', 'KZN', 'EC', 'LP', 'MP', 'NW', 'FS', 'NC']; }
+  function tmLater() { if (window.__ehxLater) window.__ehxLater(); }
+  function tmYear() { var ys = tpYears(); return ys.indexOf(TM.y) >= 0 ? TM.y : ys[0]; }
+  function tmBin(v) { for (var i = 0; i < TB.length; i++) if (v < TB[i][0]) return i; return TB.length - 1; }
+  function tmCol(v, cur) { return (cur ? TP_BLUE : TP_GREY)[tmBin(v)]; }
+  // a province's results at an election: the feed's data, or null while it is read (or where it can't be)
+  function tmProv(y, pc) {
+    var R = R$(); if (!pc || !R) return null;
+    if (y === tpYears()[0]) {
+      var k = String((R.S && R.S.updated) || 0);
+      if (TM.curK[pc] !== k && R.province) {
+        TM.curK[pc] = k;
+        R.province(pc).then(function (d) { if (d && TM.cur[pc] !== d) { TM.cur[pc] = d; tmLater(); } }, function () { TM.curK[pc] = ''; setTimeout(tmLater, 30500); });
+      }
+      return TM.cur[pc] || null;
+    }
+    var key = y + '|' + pc, o = TM.past[key];
+    if (!o || (!o.d && !o.busy && Date.now() - o.t >= 30000)) {
+      o = TM.past[key] = { busy: true, t: 0, d: null, n: (o ? o.n : 0) + 1 };
+      // the service can be slow on the older elections' provinces: 30 s, then the note says it tries again
+      var ac = window.AbortController ? new AbortController() : null, to = setTimeout(function () { if (ac) ac.abort(); }, 30000);
+      fetch(tpBase() + '/' + y + '/provinces/' + encodeURIComponent(PV[pc] || pc), ac ? { signal: ac.signal } : undefined).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (d) { if (d && d.municipal_results) o.d = d; }, function () {})
+        .then(function () { clearTimeout(to); o.busy = false; o.t = Date.now(); if (!o.d) setTimeout(tmLater, 30500); tmLater(); });
+    }
+    return o.d;
+  }
+  function tmCode(e) { var s = String(e.municipality_name || ''), i = s.indexOf(' - '); return (i > 0 ? s.slice(0, i) : s).trim().toUpperCase(); }
+  function tmName(e) { var s = String(e.municipality_name || ''), i = s.indexOf(' - '); return (i >= 0 ? s.slice(i + 3) : s).replace(/\s*\[[^\]]*\]\s*$/, '').trim(); }
+  // this election's council names by code (the hub's read): a council of an election before goes by its name now where its code stands
+  // (the feed has a 2016 council as New Municipality, now Collins Chabane)
+  // v3.12.6: by the hub's own names (SA_MUNIS, as its map and tooltips have them): the feed has some provinces' councils in capitals (!KHEIS)
+  function tmCase(s) { return s && s === s.toUpperCase() && /[A-Z]/.test(s) ? s.toLowerCase().replace(/(^|[\s\-(!'\/])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); }) : s; }
+  function tmHubName(k) { var M = window.SA_MUNIS || {}, m = M[k], R = R$(); if (!m || !m.n) return ''; var s = R && R.shortName ? R.shortName(m) : m.n; return s.replace(/ Metro$/, '') + (m.t === 'Metropolitan' ? ' Metro' : ''); }
+  function tmNow() { var R = R$(), IX = (R && R.IX) || {}, o = {}; Object.keys(IX).forEach(function (k) { var x = IX[k]; if (x && x.e) o[tmCode(x.e)] = tmHubName(k) || tmCase(tmName(x.e)); }); return o; }
+  // an election before this one: its councils with voting districts, by code, from the provinces read so far
+  function tmIndex(y) {
+    var o = TM.idx[y] || (TM.idx[y] = { n: -1, by: {} }), n = 0;
+    tmProvs().forEach(function (pc) { var x = TM.past[y + '|' + pc]; if (x && x.d) n++; });
+    if (o.n !== n) {
+      o.n = n; o.by = {}; TM.nrm[y] = {};
+      tmProvs().forEach(function (pc) { var x = TM.past[y + '|' + pc]; ((x && x.d && x.d.municipal_results) || []).forEach(function (e) { if (+e.vd_count > 0) o.by[tmCode(e)] = { e: e, pc: pc }; }); });
+    }
+    return o;
+  }
+  function tmNorm(y, code) {
+    var o = tmIndex(y), c = TM.nrm[y] || (TM.nrm[y] = {}), k = String(code || '').toUpperCase(), R = R$();
+    if (!Object.prototype.hasOwnProperty.call(c, k)) c[k] = o.by[k] && R && R.norm ? R.norm(o.by[k].e) : null;
+    return c[k];
+  }
+  // the hub's map at an election before this one (null: this election, in the hub's own colours); painted again as its provinces come in
+  function tmHook(y, cur, src) {
+    var A = window.EH_AREA, R = R$(), n = cur ? 0 : tmIndex(y).n, sig = cur ? '' : y + '|' + n + '|' + (src[y] ? 1 : 0);
+    if (sig === TM.sig) return;
+    TM.sig = sig;
+    window.EHX_TURN = cur ? null : {
+      y: y, col: function (v) { return tmCol(v, false); }, council: function (code) { return tmNorm(y, code); },
+      prov: function (pc) { var e = tpOf(src[y], pc); return e && R && R.norm ? R.norm(e) : null; },
+      none: n < tmProvs().length ? 'Loading the ' + y + ' results\u2026' : 'No council with these boundaries in ' + y
+    };
+    if (A && A.repaint) A.repaint();
+  }
+  function tmWait() {
+    var A = window.EH_AREA, R = R$(), pc = areaNow(), y = tmYear(), ys = tpYears(), IX = (R && R.IX) || {};
+    if (A && A.cmap && !A.cmap.set(pc) && !A.cmap.failed(pc)) return true;
+    if (y === ys[0]) return (pc ? [pc] : tmProvs()).some(function (p) { for (var k in IX) if (IX[k] && IX[k].pc === p) return false; return true; });
+    return (pc ? [pc] : tmProvs()).some(function (p) { var o = TM.past[y + '|' + p]; return !o || (o.busy && o.n < 2); });
+  }
+  function tmPts(d) { var r = Math.round(d * 10) / 10; return (r > 0 ? '+' : r < 0 ? '\u2212' : '') + Math.abs(r).toFixed(1).replace('.', ',') + (Math.abs(r) === 1 ? ' point' : ' points'); }
+  function tmBuild(el) {
+    var map = $('res-map'); if (map && el.contains(map)) el.parentNode.appendChild(map);
+    el.innerHTML = '<div class="tx-yrs" role="group" aria-label="Election"></div><div class="tx-top"><div class="tx-map"></div><div class="tx-sum" aria-live="polite"></div></div>' +
+      '<div class="tx-list"><div class="tx-lh" aria-hidden="true"></div><ol class="tx-lb"></ol></div>';
+    TM.el = el; TM.keys = {};
+    if (X.still) return;
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b || b.closest('#res-map')) return;
+      if (b.hasAttribute('data-y')) { TM.y = b.getAttribute('data-y'); tmLater(); }
+      else if (b.hasAttribute('data-pc') && window.EH_AREA && EH_AREA.set) EH_AREA.set(b.getAttribute('data-pc'), true);
+    });
+  }
+  function tmSet(part, html) { var e = TM.el.querySelector(part); if (TM.keys[part] !== html) { e.innerHTML = html; TM.keys[part] = html; } return e; }
+  function paintExp(el, ys, src, open) {
+    if (TM.el !== el || !el.querySelector('.tx-yrs')) tmBuild(el);
+    var y = tmYear(), yi = ys.indexOf(y), pc = areaNow(), cur = yi === 0, prevY = ys[yi + 1] || '', d = src[y], nm = PV[pc] || 'South Africa';
+    if (!cur) tmProvs().forEach(function (p) { tmProv(y, p); });   // the whole election, for the map
+    tmHook(y, cur, src);
+    var map = $('res-map'), slot = el.querySelector('.tx-map');
+    if (map && map.parentNode !== slot) slot.appendChild(map);
+    tmSet('.tx-yrs', ys.slice().reverse().map(function (x) { return X.still && x !== y ? '' : '<button type="button" data-y="' + x + '" aria-pressed="' + (x === y) + '"' + (X.still ? ' tabindex="-1"' : '') + '>' + x + '</button>'; }).join(''));
+    // the list: the provinces of South Africa, or the councils of the province, at the election picked
+    var items = [], wait = false, P = pc ? tmProv(y, pc) : null;
+    if (!pc) items = tmProvs().map(function (p) { return { pc: p, name: PV[p], v: tpVal(d, p) }; });
+    else if (P) { var now = tmNow(); items = (P.municipal_results || []).filter(function (e) { return +e.vd_count > 0; }).map(function (e) { return { name: now[tmCode(e)] || tmCase(tmName(e)), v: tpVal(e, '') }; }); }
+    else wait = true;
+    items.sort(function (a, b) { return (a.v == null) - (b.v == null) || (b.v || 0) - (a.v || 0) || a.name.localeCompare(b.name); });
+    var mx = 0; items.forEach(function (it) { if (it.v > mx) mx = it.v; });
+    var withV = items.filter(function (it) { return it.v != null; });
+    // the area's turnout beside the map
+    var v = tpVal(d, pc), pv = prevY ? tpVal(src[prevY], pc) : null, reg = tpReg(d, pc), facts = '';
+    if (reg) facts += '<div><dt>Registered voters</dt><dd>' + int(reg) + '</dd></div>';
+    if (withV.length > 1) facts += '<div><dt>Highest</dt><dd><span>' + esc(withV[0].name) + '</span> ' + tpPct(withV[0].v) + '</dd></div><div><dt>Lowest</dt><dd><span>' + esc(withV[withV.length - 1].name) + '</span> ' + tpPct(withV[withV.length - 1].v) + '</dd></div>';
+    tmSet('.tx-sum', '<h2 class="an">' + esc(nm) + '</h2><div class="tb"><span class="ehx-sr">Turnout in ' + y + ': </span><b>' + (v == null ? (cur && open ? 'No result yet' : '\u2014') : tpPct(v)) + '</b>' +
+      (v != null && pv != null ? '<span class="ch"><b>' + tmPts(v - pv) + '</b><span>since ' + prevY + '</span></span>' : '') + '</div>' + (facts ? '<dl>' + facts + '</dl>' : ''));
+    // the map's key: the area's councils in each band of turnout
+    // an election before this one over the whole country: until its nine provinces are in, the map says it is loading
+    var part = !cur && !pc && tmIndex(y).n < tmProvs().length;
+    var box = map && map.querySelector('.res-map-svg'), ld = box && box.querySelector('.ehx-yload');
+    if (box && part && !ld) { ld = document.createElement('span'); ld.className = 'res-loading ehx-yload'; box.appendChild(ld); }
+    if (ld && !part) ld.remove();
+    else if (ld && ld.textContent !== 'Loading the ' + y + ' results\u2026') ld.textContent = 'Loading the ' + y + ' results\u2026';
+    tmSet('.tx-lh', '<span>' + (pc ? 'Council' : 'Province') + '</span><span>Turnout in ' + y + '</span>');
+    var lb = tmSet('.tx-lb', wait ? '<li class="tx-note">' + (TM.past[y + '|' + pc] && !TM.past[y + '|' + pc].busy && !cur ? 'The ' + y + ' councils could not be read. The graphic tries again by itself.' : 'Loading the ' + y + ' councils\u2026' + (cur ? '' : ' The older results can take a little while.')) + '</li>' :
+      items.map(function (it) {
+        var f = it.v == null || !mx ? 0 : Math.max(0, Math.min(1, it.v / mx)), t = it.v == null ? (cur && open ? 'No result yet' : '\u2014') : tpPct(it.v);
+        var inner = '<span class="nm" title="' + esc(it.name) + '">' + esc(it.name) + '</span><span class="bw"><i style="--f:' + f.toFixed(4) + (it.v == null ? '' : ';--bc:' + tmCol(it.v, cur)) + '"' + (it.v == null ? ' hidden' : '') + '></i><b>' + t + '</b></span>';
+        return '<li>' + (it.pc && !X.still ? '<button type="button" class="tx-r is-go" data-pc="' + it.pc + '" aria-label="' + esc(it.name + ', ' + t + '. Open the province') + '">' + inner + '<svg class="go" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"></path></svg></button>' : '<div class="tx-r">' + inner + '</div>') + '</li>';
+      }).join(''));
+    el.setAttribute('aria-label', 'Turnout in ' + nm + ' at the ' + y + ' local elections');
+    // the names' column: as wide as the longest name, at most 44% of the list
+    var w = 0; [].forEach.call(lb.querySelectorAll('.nm'), function (n) { w = Math.max(w, n.scrollWidth); });
+    var nw = 'min(' + (w ? Math.ceil(w) + 2 : 120) + 'px, 44%)';
+    if (el.style.getPropertyValue('--nw') !== nw) el.style.setProperty('--nw', nw);
+  }
+  function paintTurn() {
+    var R = R$(), wrap = root.querySelector('.eh-tabs-sec .eh-wrap'), el = root.querySelector('.ehx-turn');
+    if (!R || !R.S || !wrap) return;
+    var ys = tpYears(), s = state(), src = {}, open = /^(waiting|counting|complete)$/.test(s.k);
+    ys.slice(1).forEach(tpRead);
+    src[ys[0]] = R.S.nat || null;
+    ys.slice(1).forEach(function (y) { src[y] = tpPast[y] ? tpPast[y].d : null; });
+    // its classes set once (embed-fit.js adds its own: is-short, ehx-scroll)
+    if (!el) { el = document.createElement('div'); el.className = 'ehx-turn is-exp'; el.setAttribute('role', 'group'); wrap.appendChild(el); TM.el = null; }
+    paintExp(el, ys, src, open);
+  }
   /* ---- v3.8 · the note on the ballots, over the credit, on the graphics of the full count (graphics.js: ballots). A party's votes and share
      there are its votes on every ballot, the feed's votes: ward and PR, and in a local council district too. A metro has two ballots and no
      district votes in its figures, so its note names the two. No note on turnout, the hung councils, the coalition builder or a ward's
@@ -237,7 +540,9 @@
   }
   function paintBallots() {
     if (!noteEl) return;
-    var t = ballotNote();
+    var t = g.id === 'turnprov' ? tpNote() : ballotNote();
+    // v3.14 · Votes by party: change since 2021, under its change column
+    if (g.id === 'votescmp' && t && !yr21() && root.querySelector('#mf-res .ehx-chg')) t = 'Since ' + yrPrev() + ': the change in each party\u2019s share of the vote, in percentage points. ' + t;
     if (noteEl.textContent !== t) noteEl.textContent = t;
     if (noteEl.hidden !== !t) noteEl.hidden = !t;
   }
@@ -399,8 +704,9 @@
   // nothing to wait for.
   function dataBusy() {
     var R = R$(); if (!R || !R.S) return true;
+    if (g.id === 'turnprov') return tpWait() || tmWait();
     if (R.S.state === 'waiting' || R.S.state === 'error') return false;
-    if (!nat) return !(R.IX && R.IX[st.muni]);
+    if (!nat) return !(R.IX && R.IX[st.muni]) || (yrData() && !YR.P && !YR.none && (YR.busy || !YR.t));   // v3.14: and 2021's, for the change column
     if (!/^(map|turnout|table|hung|cmp)$/.test(g.id)) return false;
     var pc = areaNow(), want = pc ? [pc] : R.PROV_ORDER || [], IX = R.IX || {}, IXP = R.IXP || {}, i;
     function has(ix, p) { for (var k in ix) if (ix[k] && ix[k].pc === p) return true; return false; }
@@ -477,6 +783,21 @@
       // document too, registered before this one), not only when the page's timers next run
       document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('#dm-eh .mf-cp, #dm-eh .ehh-fig')) paintCoal(); });
     }
+    if (g.id === 'seats' && !X.still) {
+      sback = document.createElement('div'); sback.className = 'ehx-sback'; sback.hidden = true;
+      sback.innerHTML = '<button type="button" class="mf-cb-go"><span class="arr" aria-hidden="true">\u2190</span><span>Back to results</span></button>';
+      sback.firstChild.addEventListener('click', function () {
+        var b = root.querySelector('.mf-res-seats.is-coal [data-coal-back]');
+        if (b) b.click();   // the hub leaves coalition mode and gives its question the keyboard's focus
+        paintSback();
+      });
+      // the question pressed: Back to results at once (after the hub's own click handler), with the keyboard's focus, as the hub gives its own
+      document.addEventListener('click', function (e) {
+        if (!(e.target.closest && e.target.closest('#dm-eh [data-coal-go]'))) return;
+        paintSback();
+        if (!sback.hidden) { try { sback.firstChild.focus({ preventScroll: true }); } catch (x) {} }
+      });
+    }
     if (g.locate) finder();
     // Share on WhatsApp: its link set again as it is pressed, should the hub have just written its own
     if (g.ward && !X.still) ['click', 'contextmenu'].forEach(function (t) { root.addEventListener(t, function (e) { if (e.target.closest && e.target.closest('.mf-wa-btn')) paintShare(); }, true); });
@@ -488,11 +809,11 @@
     }
     var raf = 0;
     function later() { lastMut = Date.now(); if (raf) return; raf = setTimeout(function () { raf = 0; tickAll(); }, 40); }
-    function tickAll() { if (g.id === 'cmp') markCmp(); if (g.id === 'wards') pinWards(); if (g.locate) syncPick(); fetchWard(); paintHead(); paintBallots(); paintStatus(); paintCoal(); if (g.ward && !X.still) paintShare(); if (g.id === 'seats') paintSeats(); if (X.still) { openAll(); cutLists(); paintStamp(); } postH(); }
+    function tickAll() { if (g.id === 'cmp') markCmp(); if (g.id === 'wards') pinWards(); if (g.locate) syncPick(); fetchWard(); if (g.id === 'turnprov') paintTurn(); if (g.id === 'votescmp' && !X.still) paintYr(); paintHead(); paintBallots(); paintStatus(); paintCoal(); if (g.ward && !X.still) paintShare(); if (g.id === 'seats') { paintSeats(); paintSback(); } if (X.still) { openAll(); cutLists(); paintStamp(); } paintChg(); postH(); }
     window.__ehxLater = later;
     // Change since 2021: the hub writes the tab afresh, its parts hidden until marked (embed.css): marked at once, before the page is painted
     new MutationObserver(function (ms) {
-      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(hrow.contains(t) || foot.contains(t) || noteEl.contains(t) || (coal && coal.contains(t)) || (t.closest && t.closest('.ehx-seats')))) { if (g.id === 'cmp') markCmp(); later(); return; } }
+      for (var i = 0; i < ms.length; i++) { var t = ms[i].target; if (!(hrow.contains(t) || foot.contains(t) || noteEl.contains(t) || (coal && coal.contains(t)) || (t.closest && t.closest('.ehx-seats, .ehx-turn, .ehx-sback, .ehx-yrs, .ehx-v21')))) { if (g.id === 'cmp') markCmp(); if (g.id === 'votescmp') paintChg(); later(); return; } }
     }).observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden', 'data-phase'] });
     var R = R$();
     if (R) { if (R.on) R.on(later); if (R.onPhase) R.onPhase(later); if (R.ready) R.ready().then(later, later); }
@@ -500,6 +821,8 @@
     if (window.ResizeObserver) new ResizeObserver(postH).observe(document.documentElement);
     window.addEventListener('load', postH);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(postH);
+    // Turnout by province: its names' column measured again once the fonts are in, and at a new width (the type is smaller on a phone)
+    if (g.id === 'turnprov') { if (document.fonts && document.fonts.ready) document.fonts.ready.then(later); window.addEventListener('resize', later); }
     setInterval(postH, 2000);   // a frame that came up hidden (an article tab in the background) asks again
     tickAll();
     reveal();
