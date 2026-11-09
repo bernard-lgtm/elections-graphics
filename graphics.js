@@ -11,6 +11,27 @@
    its width between the two (library.js: fluid), never taller than h. natOnly (v3.12): South Africa with its provinces in one graphic, no area
    to pick; areaViews: its views that open on an area (South Africa or a province), picked in the library. */
 window.EHX_PROV = [['', 'South Africa'], ['GP', 'Gauteng'], ['WC', 'Western Cape'], ['KZN', 'KwaZulu-Natal'], ['EC', 'Eastern Cape'], ['LP', 'Limpopo'], ['MP', 'Mpumalanga'], ['NW', 'North West'], ['FS', 'Free State'], ['NC', 'Northern Cape']];
+/* v3.16 · Since 2021: the story's frames, in their order (story.html; story-data.js reads the figures, story-frames.js draws them). type:
+   shift (every party's share, 2021 and 2026), party (one party: its share, its councils, its seats), metros, hung, turnout. party: its short
+   name on the hub; the: how a sentence names it; name: its full name, in the kicker. stats: the party's figures under its councils, from
+   maj (councils with a majority), top (councils where it has the most seats), inC (councils where it won seats), seats (council seats),
+   metroTop (metros where it has the most seats). def: false, left out of the story unless picked in the library. h: the frame's embed
+   height on its own; dur: its time in the story, in milliseconds (9 seconds otherwise). */
+window.EHX_STORY = [
+  { id: 'shift', type: 'shift', label: 'Party support', short: 'Overview', dur: 10000 },
+  { id: 'da', type: 'party', party: 'DA', the: 'the DA', name: 'Democratic Alliance', label: 'DA', stats: ['metroTop', 'top', 'seats'] },
+  { id: 'anc', type: 'party', party: 'ANC', the: 'the ANC', name: 'African National Congress', label: 'ANC', stats: ['maj', 'metroTop', 'seats'] },
+  { id: 'mk', type: 'party', party: 'MK', the: 'MK', name: 'uMkhonto weSizwe Party', label: 'MK', stats: ['top', 'maj', 'seats'] },
+  { id: 'eff', type: 'party', party: 'EFF', the: 'the EFF', name: 'Economic Freedom Fighters', label: 'EFF', stats: ['seats', 'inC'] },
+  { id: 'ifp', type: 'party', party: 'IFP', the: 'the IFP', name: 'Inkatha Freedom Party', label: 'IFP', stats: ['maj', 'top', 'seats'] },
+  { id: 'actionsa', type: 'party', party: 'ActionSA', the: 'ActionSA', name: 'ActionSA', label: 'ActionSA', stats: ['seats', 'inC', 'top'] },
+  { id: 'pa', type: 'party', party: 'PA', the: 'the PA', name: 'Patriotic Alliance', label: 'PA', stats: ['seats', 'inC', 'top'] },
+  { id: 'ffplus', type: 'party', party: 'FF+', the: 'the FF+', name: 'Freedom Front Plus', label: 'FF+', stats: ['seats', 'inC'], def: false },
+  { id: 'sacp', type: 'party', party: 'SACP', the: 'the SACP', name: 'South African Communist Party', label: 'SACP', stats: ['seats', 'inC'], def: false },
+  { id: 'metros', type: 'metros', label: 'Metros', short: 'Metros', dur: 10000 },
+  { id: 'hung', type: 'hung', label: 'Hung councils', short: 'Hung' },
+  { id: 'turnout', type: 'turnout', label: 'Turnout', short: 'Turnout' }
+];
 window.EHX_GRAPHICS = [
   { id: 'map', h: 840, ballots: true, group: 'area', tab: 'results', name: 'Councils by leading party', kicker: 'Leading party by council',
     desc: 'Every metro and local council coloured by the party leading it, with party support beside the map. Readers can open a province from the map and point at a party to find its councils.',
@@ -49,5 +70,12 @@ window.EHX_GRAPHICS = [
     desc: 'One ward: the candidate leading or elected, and every candidate\u2019s votes.',
     sdesc: 'One ward: the candidate leading or elected, and the votes of the candidates of the parties with seats on the council and of any other with 5% of the ward\u2019s votes; the rest together as Others.' },
   { id: 'wardpick', h: 860, group: 'muni', ward: true, locate: true, noStill: true, name: 'All ward results with finder', kicker: 'Ward result',
-    desc: 'Ward result with a dropdown of every ward in the council and Use my location, which opens the reader\u2019s own ward, in any council. It opens on the ward picked here.' }
+    desc: 'Ward result with a dropdown of every ward in the council and Use my location, which opens the reader\u2019s own ward, in any council. It opens on the ward picked here.' },
+  /* v3.16 · Since 2021 (group story, page story.html): the story, its frames one after the other with a timeline over them, and each frame
+     on its own (a view each). Always the live 2021 and 2026 results of South Africa. */
+  { id: 'story', h: 720, group: 'story', page: 'story.html', noStill: true, name: 'Since 2021: the story', kicker: 'Since 2021',
+    desc: 'How the vote has changed since 2021, frame by frame: party support, then each party, the metros, hung councils and turnout. It plays by itself once it is on screen, with a timeline over it to jump to a frame, and Back, Pause and Next under it. Pick the frames it shows here.' },
+  { id: 'frame', h: 630, hv: { shift: 600, metros: 620, turnout: 620, hung: 560 }, group: 'story', page: 'story.html', name: 'Since 2021: one frame', kicker: 'Since 2021',
+    views: window.EHX_STORY.map(function (f) { return [f.id, f.label, 'Since 2021: ' + f.label]; }),
+    desc: 'One frame of the story on its own: the figures of 2021 beside those of 2026.' }
 ];

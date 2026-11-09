@@ -155,3 +155,10 @@ button{font:inherit}
 .lib-nav-panel .lib-nav-tile.is-current .lib-nav-img{border-color:#fff;box-shadow:0 0 0 1px #fff}
 .lib-nav-panel .lib-nav-a:hover .lib-nav-name,.lib-nav-panel .lib-nav-a:focus-visible .lib-nav-name,.lib-nav-panel .lib-nav-views a:hover,.lib-nav-panel .lib-nav-views a:focus-visible{color:var(--dm-red-lt)}
 .lib-nav-panel .lib-nav-views a{color:#B7B7B7}
+/* v3.16 · Since 2021: the story's frames to pick (chips, black when in the story) */
+.g-pick .g-lab{display:flex;flex-direction:column;gap:6px}
+.lib-chips{display:flex;flex-wrap:wrap;gap:6px}
+.lib-chips button{height:30px;padding:0 11px;border:1px solid var(--ink-1);border-radius:15px;background:#fff;color:var(--ink-1);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer;white-space:nowrap}
+.lib-chips button:hover{background:#F7F7F7}
+.lib-chips button.is-on{background:var(--ink-1);color:#fff}
+.lib-chips button:focus-visible{outline:2px solid var(--ink-1);outline-offset:2px}

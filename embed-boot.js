@@ -11,6 +11,8 @@ window.__errs = []; window.addEventListener('error', function (e) { window.__err
   var u = new URL(location.href), q = u.searchParams, id = String(q.get('embed') || '').toLowerCase();
   if (id === 'cmp' && !q.get('view')) q.set('view', 'party');
   var g = GR.filter(function (x) { return x.id === id; })[0];
+  // v3.16 · a graphic with a page of its own (Since 2021: story.html), opened here: that page, with the same address parameters
+  if (g && g.page && g.page !== 'graphic.html') { try { location.replace(g.page + location.search + location.hash); } catch (e) {} return; }
   var data = String(q.get('data') || '').toLowerCase();
   var X = window.EHX = { g: g || null, id: id, data: data, build: data === 'sample' || data === '2021' ? 'preview' : 'live' };
   if (!g) { h.setAttribute('data-embed', 'none'); return; }

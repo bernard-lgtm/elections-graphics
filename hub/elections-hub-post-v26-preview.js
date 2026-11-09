@@ -501,8 +501,9 @@
   function ehxShows(part) {
     var X = window.EHX, id = X && X.g ? X.g.id : '';
     if (!id) return true;
-    if (part === 'councils') return /^(map|turnout|table)$/.test(id);
-    if (part === 'outlines') return /^(map|turnout)$/.test(id);
+    var tx = id === 'turnprov' && X.view === 'explore';   // library v3.12.3: Turnout by province's Explorer has the councils map
+    if (part === 'councils') return /^(map|turnout|table)$/.test(id) || tx;
+    if (part === 'outlines') return /^(map|turnout)$/.test(id) || tx;
     if (part === 'hung') return id === 'hung';
     if (part === 'wardmap') return id === 'wards';
     return part !== 'allprov';
@@ -7322,7 +7323,7 @@ guard("results", function () {
       S: S, ready: ready, retry: retry, errMsg: errMsg, ERR_TXT: ERR_TXT, onPhase: onPhase, province: province, council: council, councilPrev: councilPrev, ward: ward, wardPrev: wardPrev, wardsAll: wardsAll, wardsAllPrev: wardsAllPrev, tick: tick, norm: norm, outcome: outcome, on: on, refresh: refresh,
       IX: IX, IXP: IXP, natPrev: natPrev, provincePrev: provincePrev, hasPrev: hasPrev, PROV_ORDER: PROV_ORDER, PREV: PREV, GATE: GATE, seatsView: seatsView, hungOf: hungOf, drawn: drawn, deadline: deadline, dlStrip: dlStrip, setSample: setSample, setDay: setDay, setDec: setDec, dec: function () { return DEC; }, isDeclared: isDeclared, hasDeadline: function () { return !!String((ROOT && ROOT.getAttribute('data-deadline')) || '').trim(); }, hasPrev: hasPrev, pct: pct, int: int, short: short, declared: declared, decPct: decPct, shortName: shortName,
       bySeats: bySeats, segs: segs, bar: bar, info: info, wait: wait, msg: msg, OTHERS: OTHERS, useNames: useNames, nameMatcher: nameMatcher, wardNames: wardNames, boardData: boardData,
-      render: { councilBox: councilBox, declBox: declBox, councilBody: councilBody, fill: fill, hydrate: hydrate, chip: chip, wardBox: wardBox, wardList: wardList, shareTable: shareTable, srcLine: srcLine }
+      render: { tableSec: tableSec, councilBox: councilBox, declBox: declBox, councilBody: councilBody, fill: fill, hydrate: hydrate, chip: chip, wardBox: wardBox, wardList: wardList, shareTable: shareTable, srcLine: srcLine }
     };
   }());
 });
@@ -7960,6 +7961,10 @@ guard("results across South Africa", function () {
       });
     }
     function cmBin(v) { for (var i = 0; i < TURN_BINS.length; i++) if (v < TURN_BINS[i][1]) return i; return TURN_BINS.length - 1; }
+    /* graphics library v3.12.3 · Turnout by province's Explorer: the map by turnout at an election before this one (window.EHX_TURN, set by
+       embed.js while one is picked): H.y the year, H.col(v) its colour for a turnout, H.council(code) and H.prov(pc) that election's results
+       (as norm gives them, or null), H.none the tooltip's foot for a council with none. paintMap again through EH_AREA.repaint. */
+    function ehxTurn() { var H = window.EHX_TURN; return view.mode === 'turn' && H && H.council ? H : null; }
     // the map (from paintMap); false when the councils can't be drawn, so the dots stand
     function cmDraw(pc) {
       if (started && ehxShows('outlines')) { cmLoad(pc || ''); if (pc && cmFail[pc]) cmLoad(''); }   // library v3.6: in an embed, only where the map shows
@@ -7967,7 +7972,7 @@ guard("results across South Africa", function () {
       if (!set && cmFail[''] && (!pc || cmFail[pc])) return false;
       var S = R$.S, turn = view.mode === 'turn', area = areaName(pc), fine = !!(pc && cmSet[pc]);
       var vb = !set ? viewBox(pc) : fine || !pc ? set.vb : cmBox(set.councils, pc) || viewBox(pc), ppu = 470 / vb[2];
-      var body = '', nb = '', counts = {}, bins = TURN_BINS.map(function () { return 0; }), nC = 0, have = 0;
+      var body = '', nb = '', counts = {}, bins = TURN_BINS.map(function () { return 0; }), nC = 0, have = 0, HT = ehxTurn();
       if (set) {
         set.councils.forEach(function (c) {
           if (pc && c.pc !== pc) return;   // v13.19: a province alone, without its neighbours
@@ -7981,6 +7986,7 @@ guard("results across South Africa", function () {
             if (R.turnout != null) bins[cmBin(R.turnout)]++;
             fill = !turn ? p.col : R.turnout != null ? turnCol(R.turnout) : '';
           }
+          if (HT) { var hr = HT.council(c.code); fill = hr && hr.turnout != null ? HT.col(hr.turnout) : ''; }   // library v3.12.3
           // v13.18: the council's name for its tooltip, which reads the rest from the results when the pointer comes (tipBody)
           body += '<path class="rc" d="' + c.d + '" data-c="' + esc(c.code) + '" data-pc="' + c.pc + '"' + (c.key ? ' data-k="' + c.key + '"' : '') + (lead ? ' data-p="' + esc(lead) + '"' : '') +
             (fill ? ' style="fill:' + esc(fill) + ';--fc:' + esc(fill) + '"' : '') + ' data-nm="' + esc(name) + '"></path>';
@@ -8073,12 +8079,13 @@ guard("results across South Africa", function () {
     // out when the pointer comes to it and kept while it moves over it (v13.18)
     function cmTip(e, c) {
       var tip = $map.querySelector('.res-tip'), cp = c.getAttribute('data-pc') || '', prov = !view.pc || c.classList.contains('is-nb');
-      var key = (prov ? 'p:' + cp : 'c:' + c.getAttribute('data-c')) + '|' + view.mode, k, R;
+      var HT = ehxTurn(), key = (prov ? 'p:' + cp : 'c:' + c.getAttribute('data-c')) + '|' + view.mode + (HT ? '|' + HT.y : ''), k, R;
       if (!tip) return;
       if (prov && !PROVS[cp]) { tipOff(); return; }
       if (tip._k !== key) {
         tip._k = key;
-        if (prov) tip._b = tipBody(PROVS[cp], provR(cp), null);
+        if (prov) tip._b = tipBody(PROVS[cp], HT ? HT.prov(cp) : provR(cp), null);
+        else if (HT) tip._b = tipBody(c.getAttribute('data-nm') || '', HT.council(c.getAttribute('data-c') || ''), null);   // library v3.12.3
         else { k = c.getAttribute('data-k'); R = k ? councilR(k) : null; tip._b = tipBody(c.getAttribute('data-nm') || '', R, R ? R$.outcome(R) : null); }
       }
       tipHtml(e.clientX, e.clientY, tip._b);
@@ -8156,10 +8163,10 @@ guard("results across South Africa", function () {
         '<span class="l">' + esc(label) + '</span><b>' + esc(val) + '</b></span>';
     }
     function tipBody(name, R, o) {
-      var rows = '', foot = '', lead;
-      if (!R || !R.vdCaptured || !R.parties.length) foot = 'No result yet';
+      var rows = '', foot = '', lead, HT = ehxTurn();
+      if (!R || !R.vdCaptured || !R.parties.length) foot = HT ? HT.none : 'No result yet';
       else if (view.mode === 'turn') {
-        rows = tipRow(R.turnout != null ? turnCol(R.turnout) : '', 'Turnout', R$.pct(R.turnout), true) +
+        rows = tipRow(R.turnout != null ? (HT ? HT.col : turnCol)(R.turnout) : '', 'Turnout', R$.pct(R.turnout), true) +
           (R.registered ? tipRow('', 'Registered voters', R$.int(R.registered)) : '') + (R.cast ? tipRow('', 'Ballots cast', R$.int(R.cast)) : '');
       } else {
         lead = (o && o.lead) || R.parties[0];
@@ -8167,7 +8174,7 @@ guard("results across South Africa", function () {
           .map(function (p, i) { return tipRow(p.col, p.label, R$.pct(p.pct), !i); }).join('');
         if (o && (o.state === 'majority' || o.state === 'hung') && o.total) foot = (o.state === 'majority' ? 'Majority' : 'No majority') + ' \u00b7 ' + lead.label + ' ' + lead.seats + ' of ' + o.total + ' seats';
       }
-      if (R && R.vdCaptured && (o ? o.state === 'counting' : R$.S.state === 'counting')) foot = R$.decPct(R) + ' declared';
+      if (!HT && R && R.vdCaptured && (o ? o.state === 'counting' : R$.S.state === 'counting')) foot = R$.decPct(R) + ' declared';
       return '<span class="nm">' + esc(name) + '</span>' + rows + (foot ? '<span class="ft">' + esc(foot) + '</span>' : '');
     }
     // the tooltip's markup over its point (client px), or under it where the map has no room above (v13.18)
@@ -8341,6 +8348,7 @@ guard("results across South Africa", function () {
     window.EH_RES_MODE = function (id) { var m = id === 'turnout' ? 'turn' : 'win'; if (view.mode === m) return; view.mode = m; if (started) paintMap(); };
     window.EH_AREA = {
       get: function () { return view.pc; }, name: areaName, provR: provR, on: function (f) { areaSubs.push(f); },
+      repaint: function () { if (started) paintMap(); },   // library v3.12.3: the Explorer's map at another election
       set: function (pc, quiet) { if (OPTS.some(function (o) { return o[0] === pc; })) setView(pc, quiet); },
       cmap: {
         set: function (pc) { return (pc && cmSet[pc]) || cmSet[''] || null; },

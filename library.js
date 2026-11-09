@@ -2,7 +2,9 @@
    Interactive: its pickers with Copy embed code under them (one frame, at the graphic's fixed height), and the live preview (graphic.html
    in a frame, at the preview width and the graphic's fixed height). Still: the same pickers with the image downloads under them, and the
    still graphic (graphic.html with &mode=still: as tall as everything in it, the frame following its height; export.js inside draws them).
-   Links and codes point at the published library: this page's own address once it is published, config.js's publicBase from a preview. */
+   Links and codes point at the published library: this page's own address once it is published, config.js's publicBase from a preview.
+   v3.16 · Since 2021 (group story): its graphics are pages of their own (page in graphics.js: story.html); the story has a Frames picker
+   (the frames it shows, in EHX_STORY's order) and Starts (playing, or paused: &auto=0), the frame graphic a Frame dropdown (its views). */
 (function () {
   'use strict';
   var C = window.EHX_CONFIG || {}, GR = window.EHX_GRAPHICS || [], PROV = window.EHX_PROV || [], COUNCILS = window.EHX_COUNCILS || [], DIR = window.EHX_DIR || '';
@@ -26,7 +28,9 @@
   var UI = { fig: FIG.hasOwnProperty(TW.fig) ? TW.fig : 'live', w: 668, sw: 540, mode: 'live' };
   function curW() { return UI.mode === 'still' ? UI.sw : UI.w; }
   var S = {};
-  GR.forEach(function (g) { S[g.id] = { area: g.provOnly ? 'GP' : '', muni: g.muni || 'jhb', ward: g.ward ? '1' : '', view: g.views ? g.views[0][0] : '', h: 0, hw: 0 }; });
+  var STORY = window.EHX_STORY || [];
+  function defFrames() { return STORY.filter(function (f) { return f.def !== false; }).map(function (f) { return f.id; }); }
+  GR.forEach(function (g) { S[g.id] = { area: g.provOnly ? 'GP' : '', muni: g.muni || 'jhb', ward: g.ward ? '1' : '', view: g.views ? g.views[0][0] : '', frames: g.group === 'story' && !g.views ? defFrames() : null, auto: true, h: 0, hw: 0 }; });
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function gOf(id) { return GR.filter(function (g) { return g.id === id; })[0]; }
   function viewOf(g) { var s = S[g.id]; return (g.views || []).filter(function (v) { return v[0] === s.view; })[0] || null; }
@@ -36,18 +40,22 @@
   function params(g) {
     var s = S[g.id], p = new URLSearchParams();
     p.set('embed', g.id);
-    if (g.group === 'area') { if (s.area && areaOk(g)) p.set('area', s.area); } else { p.set('muni', s.muni); if (g.ward) p.set('ward', s.ward); }
-    if (g.views && s.view !== g.views[0][0]) p.set('view', s.view);
+    if (g.group === 'area') { if (s.area && areaOk(g)) p.set('area', s.area); } else if (g.group === 'muni') { p.set('muni', s.muni); if (g.ward) p.set('ward', s.ward); }
+    if (g.views && (s.view !== g.views[0][0] || g.group === 'story')) p.set('view', s.view);   // a story frame always names its frame
+    if (s.frames && s.frames.join(',') !== defFrames().join(',')) p.set('frames', s.frames.join(','));
+    if (s.frames && !s.auto) p.set('auto', '0');
     return p.toString();
   }
-  function link(g) { return BASE + 'graphic.html?' + params(g); }
-  function frameSrc(g, extra) { return DIR + 'graphic.html?' + params(g) + (UI.mode === 'still' ? '&mode=still' : '') + (FIG[UI.fig] ? '&' + FIG[UI.fig] : '') + (extra ? '&' + extra : ''); }
+  function pageOf(g) { return g.page || 'graphic.html'; }
+  function link(g) { return BASE + pageOf(g) + '?' + params(g); }
+  function frameSrc(g, extra) { return DIR + pageOf(g) + '?' + params(g) + (UI.mode === 'still' ? '&mode=still' : '') + (FIG[UI.fig] ? '&' + FIG[UI.fig] : '') + (extra ? '&' + extra : ''); }
   function place(g) {
     var s = S[g.id];
     if (g.group === 'area') return PN[s.area] || 'South Africa';
+    if (g.group === 'story') return 'South Africa';
     var r = MUNI[s.muni]; return (r ? r[1] : s.muni) + (g.ward ? ', Ward ' + s.ward : '');
   }
-  function titleOf(g) { var v = viewOf(g); return (v ? v[2] : g.kicker || g.name) + ': ' + place(g) + ' \u00b7 Daily Maverick'; }
+  function titleOf(g) { var v = viewOf(g); if (g.group === 'story') return (v ? v[2] : g.name) + ' \u00b7 Daily Maverick'; return (v ? v[2] : g.kicker || g.name) + ': ' + place(g) + ' \u00b7 Daily Maverick'; }
   // the frame's height: the graphic's fixed height (graphics.js), the same on desktop and phones; the graphic fits itself to it. A graphic
   // with auto (Council seats, v3.7): the height measured for the place picked, where it could be measured (AUTO, below)
   function codeH(g) { var s = S[g.id], a = g.auto && AUTO[autoKey(g)]; return (a && a.h) || (g.hv && g.hv[s.view]) || g.h || 760; }
@@ -74,7 +82,7 @@
     return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + '-' + p(d.getUTCHours()) + p(d.getUTCMinutes());
   }
   function fileName(g, kind, k, at) {
-    var s = S[g.id], slug = g.group === 'area' ? (s.area || 'sa').toLowerCase() : s.muni + (g.ward ? '-ward' + s.ward : ''), t = when(at);
+    var s = S[g.id], slug = g.group === 'area' ? (s.area || 'sa').toLowerCase() : g.group === 'story' ? 'since-2021' : s.muni + (g.ward ? '-ward' + s.ward : ''), t = when(at);
     return 'dm-elections-2026-' + g.id + '-' + slug + (s.view ? '-' + s.view : '') + '-' + (kind === 'png' ? 'still' : kind) + (t ? '-' + t : '') + (k === 2 ? '@2x' : '') + '.png';
   }
   /* ---- the cards ---- */
@@ -161,9 +169,15 @@
   function picks(g) {
     var s = S[g.id], h = '';
     if (g.group === 'area') { if (areaOk(g)) h += '<label><span class="lbl">Area</span><select data-k="area">' + PROV.filter(function (p) { return !(g.provOnly && !p[0]); }).map(function (p) { return '<option value="' + p[0] + '"' + (p[0] === s.area ? ' selected' : '') + '>' + esc(p[1]) + '</option>'; }).join('') + '</select></label>'; }
-    else { var mo = muniOpts(g); h += '<label><span class="lbl">Council</span><select data-k="muni"' + (mo[1] ? '' : ' disabled') + '>' + mo[0] + '</select></label>'; }
+    else if (g.group === 'muni') { var mo = muniOpts(g); h += '<label><span class="lbl">Council</span><select data-k="muni"' + (mo[1] ? '' : ' disabled') + '>' + mo[0] + '</select></label>'; }
     if (g.ward) h += '<label><span class="lbl">Ward</span><select data-k="ward">' + wardOptions(s.muni, s.ward) + '</select></label>';
-    if (g.views && g.views.length > 1) h += '<label><span class="lbl">View</span><span class="lib-seg">' + g.views.map(function (v) { return '<button type="button" data-view="' + v[0] + '"' + (v[0] === s.view ? ' class="is-on"' : '') + '>' + esc(v[1]) + '</button>'; }).join('') + '</span></label>';
+    // v3.16 · many views (the story's frames): a dropdown
+    if (g.views && g.views.length > 6) h += '<label><span class="lbl">Frame</span><select data-k="view">' + g.views.map(function (v) { return '<option value="' + v[0] + '"' + (v[0] === s.view ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('') + '</select></label>';
+    else if (g.views && g.views.length > 1) h += '<label><span class="lbl">View</span><span class="lib-seg">' + g.views.map(function (v) { return '<button type="button" data-view="' + v[0] + '"' + (v[0] === s.view ? ' class="is-on"' : '') + '>' + esc(v[1]) + '</button>'; }).join('') + '</span></label>';
+    if (s.frames) {
+      h += '<div class="g-lab" role="group" aria-label="Frames in the story"><span class="lbl">Frames in the story</span><span class="lib-chips">' + STORY.map(function (f) { var on = s.frames.indexOf(f.id) >= 0; return '<button type="button" data-frame="' + f.id + '" aria-pressed="' + on + '"' + (on ? ' class="is-on"' : '') + '>' + esc(f.label) + '</button>'; }).join('') + '</span></div>';
+      h += '<label><span class="lbl">Starts</span><span class="lib-seg"><button type="button" data-auto="1"' + (s.auto ? ' class="is-on"' : '') + '>Playing</button><button type="button" data-auto="0"' + (s.auto ? '' : ' class="is-on"') + '>Paused</button></span></label>';
+    }
     return h;
   }
   // the card: the graphic, and beside it the pickers with the big button under them (Copy embed code; or Download PNG, the still at
@@ -283,6 +297,7 @@
     else if (g.auto) measure(g);
     if (g.hungOnly) scanHung(g);
     if (!still) paintNote(g);
+    if (g.group === 'story' && FIG[UI.fig]) msg(g, 'Since 2021 always shows the live 2021 and 2026 results, whatever the Tweaks pick.');
   }
   function setView(g, v) {
     S[g.id].view = v;
@@ -294,7 +309,7 @@
      (assets/menu/, drawn by qa/menu-thumbs.html from the sample count); pointing at a view shows that view's. Still graphics leaves out
      the graphics that need a reader (noStill). A graphic or a view picked replaces the one on the page. ---- */
   var bar = document.querySelector('.lib-top'), navBtns = [], navPanel, navScrim, navMode = '', navSeen = false;
-  var groups = [['area', 'lib-cards-area'], ['muni', 'lib-cards-muni']].map(function (x) { var h = document.getElementById(x[1]).previousElementSibling; return { k: x[0], name: h ? h.textContent : '' }; });
+  var groups = [['area', 'lib-cards-area'], ['muni', 'lib-cards-muni'], ['story', 'lib-cards-story']].filter(function (x) { return document.getElementById(x[1]); }).map(function (x) { var h = document.getElementById(x[1]).previousElementSibling; return { k: x[0], id: x[1], name: h ? h.textContent : '' }; });
   function thumb(g, v) { return DIR + 'assets/menu/' + g.id + (v ? '-' + v : '') + '.webp?v=2'; }
   function tileHtml(g, mode) {
     var cur = !page && CUR === g && UI.mode === mode, href = '#' + MODE[mode].hash + g.id;
@@ -304,6 +319,7 @@
   function panelHtml(mode) {
     return '<div class="lib-nav-in"><div class="lib-nav-hd"><div class="lib-nav-tl"><h2 class="lib-nav-title">' + esc(MODE[mode].name) + '</h2>' + (MODE[mode].only ? '<span class="lib-nav-only">' + esc(MODE[mode].only) + '</span>' : '') + '</div><p class="lib-nav-lead">' + esc(MODE[mode].lead) + '</p></div>' + groups.map(function (x) {
       var list = GR.filter(function (g) { return g.group === x.k && !(mode === 'still' && g.noStill); });
+      if (!list.length) return '';
       return '<section class="lib-nav-grp"><h2 class="lib-nav-h">' + esc(x.name) + '</h2><ul class="lib-nav-tiles">' + list.map(function (g) { return tileHtml(g, mode); }).join('') + '</ul></section>';
     }).join('') + '</div>';
   }
@@ -375,7 +391,7 @@
       CUR = g; UI.mode = mode; if (view) S[g.id].view = view;
       kick.innerHTML = MODE[mode].card + (MODE[mode].only ? '<span class="g-only">' + esc(MODE[mode].only) + '</span>' : '');
       groups.forEach(function (x, i) {
-        var box = document.getElementById(['lib-cards-area', 'lib-cards-muni'][i]), on = g.group === x.k, h = box.previousElementSibling;
+        var box = document.getElementById(x.id), on = g.group === x.k, h = box.previousElementSibling;
         box.innerHTML = on ? cardHtml(g, mode) : ''; box.hidden = !on; if (h) { h.hidden = !on; if (on) h.parentNode.insertBefore(kick, h); }
       });
       load(g);
@@ -398,6 +414,7 @@
   document.addEventListener('change', function (e) {
     var sel = e.target.closest('.g select[data-k]'), g = sel && cardOf(sel); if (!g) return;
     var k = sel.getAttribute('data-k'), s = S[g.id];
+    if (k === 'view') { setView(g, sel.value); return; }
     s[k] = sel.value;
     if (k === 'muni' && g.ward) { s.ward = wardsOf(s.muni)[0] || '1'; el(g).querySelector('select[data-k="ward"]').innerHTML = wardOptions(s.muni, s.ward); }
     msg(g, ''); load(g);
@@ -405,12 +422,23 @@
   document.addEventListener('click', function (e) {
     var b = e.target.closest('.g button, .g a.btn'), g = b && cardOf(b); if (!g) return;
     if (b.hasAttribute('data-view')) { setView(g, b.getAttribute('data-view')); return; }
+    if (b.hasAttribute('data-frame')) { pickFrame(g, b.getAttribute('data-frame')); return; }
+    if (b.hasAttribute('data-auto')) { S[g.id].auto = b.getAttribute('data-auto') === '1'; [].forEach.call(el(g).querySelectorAll('[data-auto]'), function (x) { x.classList.toggle('is-on', x === b); }); msg(g, ''); load(g); return; }
     var act = b.getAttribute('data-act');
     if (act === 'code') copy(g, b, code(g), 'Embed code copied. Paste it into the article\u2019s HTML block.');
     else if (act === 'link') copy(g, b, link(g), 'Link copied.');
     else if (act === 'png') shot(g, b);
     else if (act === 'mode') show(g.id, null, { mode: b.getAttribute('data-mode'), scroll: true });
   });
+  // v3.16 · a frame in or out of the story (at least one stays), in the story's order
+  function pickFrame(g, id) {
+    var s = S[g.id], on = s.frames.indexOf(id) >= 0;
+    if (on && s.frames.length === 1) { msg(g, 'The story needs one frame at least.', true); return; }
+    var want = on ? s.frames.filter(function (x) { return x !== id; }) : s.frames.concat(id);
+    s.frames = STORY.map(function (f) { return f.id; }).filter(function (x) { return want.indexOf(x) >= 0; });
+    [].forEach.call(el(g).querySelectorAll('[data-frame]'), function (x) { var o = s.frames.indexOf(x.getAttribute('data-frame')) >= 0; x.classList.toggle('is-on', o); x.setAttribute('aria-pressed', String(o)); });
+    msg(g, ''); load(g);
+  }
   function copy(g, b, text, done) {
     var ok = function () { msg(g, done); var t = b.textContent; b.classList.add('is-done'); b.textContent = 'Copied'; setTimeout(function () { b.classList.remove('is-done'); b.textContent = t; }, 1600); };
     var fall = function () { var ta = document.createElement('textarea'), done = false; ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(ta); ta.select(); try { done = document.execCommand('copy'); } catch (x) {} ta.remove(); if (done) ok(); else msg(g, 'The browser would not copy it. Try again, or in another browser.', true); };
